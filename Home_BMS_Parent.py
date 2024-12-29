@@ -33,7 +33,7 @@ class Home_BMS:
             threading.Thread(target=self.database_create, daemon=True).start()
 
             #GUI
-            self.BMS_GUI = B_GUI.build_GUI(A_Initialise.dictGlobalInstructions, self.db_port, self.GUI_port)
+            self.BMS_GUI = B_GUI.build_GUI(A_Initialise.dictGlobalInstructions, self.db_GUI_port)
             self.BMS_GUI.created_self = True
 
             # SENSORS

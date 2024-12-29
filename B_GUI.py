@@ -15,12 +15,11 @@ import zmq
 import json
 
 class build_GUI:
-    def __init__(self, dictInstructions, db_port, GUI_port):
+    def __init__(self, dictInstructions, db_port):
         self.RootWin = tk.Tk()  # Create the main GUI window
         self.quit_sys = False
         self.created_self = False
         self.db_port = db_port
-        self.GUI_port = GUI_port
         self.create_master_window(dictInstructions)
         self.solar_table_name = dictInstructions['Solar_Inputs']['Defaults']['Database_Table_Name']
         self.HP_table_name = dictInstructions['HP_Inputs']['Defaults']['Database_Table_Name']
