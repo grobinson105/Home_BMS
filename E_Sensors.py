@@ -10,6 +10,7 @@ import math as math
 class BMS_Sensors:
     def __init__(self, port):
         self.create(port)
+        self.continue_to_operate = True
         self.last_request_time = None
         self.dictInstructions = A_Initialise.dictGlobalInstructions
 
