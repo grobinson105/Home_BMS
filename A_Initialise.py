@@ -19,8 +19,8 @@ boolZone = True             #Set to true if you are monitoring a zoned manifold
 
 #USE A USB FLASHDRIVE. YOU NEED TO MOUNT THE USB CORRECTLY: SEE https://www.raspberrypi-spy.co.uk/2014/05/how-to-mount-a-usb-flash-disk-on-the-raspberry-pi/
 #Location of code on Pi
-dbLoc = '/media/room1/1.0 GB Volume/BMS/' #'C:\\Users\\grobi\\OneDrive\\Documents\\George\\Home Energy Monitoring v2\\v2\\Home_BMS\\'
-fileLoc = '/home/room1/Home_BMS/' #'C:\\Users\\grobi\\OneDrive\\Documents\\George\\Home Energy Monitoring v2\\v2\\Home_BMS\\'
+dbLoc = "/media/room1/3CD5-FC19/BMS/" #'C:\\Users\\grobi\\OneDrive\\Documents\\George\\Home Energy Monitoring v2\\v2\\Home_BMS\\'
+fileLoc = "/home/room1/Home_BMS/" #'C:\\Users\\grobi\\OneDrive\\Documents\\George\\Home Energy Monitoring v2\\v2\\Home_BMS\\'
 
 #I2C
 I2C_ADC_Address = 0x08      #No longer used
