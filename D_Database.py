@@ -40,21 +40,25 @@ class manage_database:
         strDBRootName = dictInstructions['General_Inputs']['DB_Name']
         strYear = str(strftime("%Y", gmtime()))
         self.strDBName = strDBRootName + strYear
-        #if strDBLoc[-1:] != "/":
-        #    self.strPath = strDBLoc + "/" + self.strDBName
-        #else:
-        self.strPath = strDBLoc + self.strDBName
-        print(self.strPath)
+        if strDBLoc[-1:] != "/":
+            self.strPath = strDBLoc + "/" + self.strDBName
+        else:
+            self.strPath = strDBLoc + self.strDBName
+
+        print(f"Database path: {self.strPath}")
+        db_exists = False
         try:
-            dbExists = 'file:{}?mode=rw'.format(pathname2url(self.strPath)) #Open the DB in read mode
-            test = sqlite3.connect(dbExists, uri=True) #Make the connection
+            db_exists_uri = f'file:{pathname2url(self.strPath)}?mode=rw'
+            sqlite3.connect(db_exists_uri, uri=True)
+            #dbExists = 'file:{}?mode=rw'.format(pathname2url(self.strPath)) #Open the DB in read mode
+            #test = sqlite3.connect(dbExists, uri=True) #Make the connection
             print("Database found")
-            boolExists = True
+            db_exists = True
         except sqlite3.OperationalError: #if the conneciton fails then it means it doesn't exist
             print("New database")
-            boolExists = False
+            db_exists = False
 
-        self.DBConn = sqlite3.connect(self.strPath, uri=True) #SQLite3 will create a new database if a connection cannot be made
+        self.DBConn = sqlite3.connect(self.strPath) #SQLite3 will create a new database if a connection cannot be made
         self.c = self.DBConn.cursor()
 
         #Solar Info
@@ -82,7 +86,7 @@ class manage_database:
         strZoneTable = lstZone[0]
         self.lstZoneFields = lstZone[1]
 
-        if boolExists == False:
+        if db_exists == False:
             if dictInstructions['User_Inputs']['Solar_Thermal'] == True:
                 self.c.execute(strSolarTable)
 
