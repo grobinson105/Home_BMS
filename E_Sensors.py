@@ -9,8 +9,8 @@ import math as math
 
 class BMS_Sensors:
     def __init__(self, port):
-        self.create(port)
         self.continue_to_operate = True
+        self.create(port)
         self.last_request_time = None
         self.dictInstructions = A_Initialise.dictGlobalInstructions
 
@@ -43,7 +43,7 @@ class BMS_Sensors:
         socket.bind(f"tcp://*:{port}")
         self.continue_to_operate = True
 
-        while self.status_operate == True:
+        while self.continue_to_operate == True:
             print("Sensor: waiting for requests")
             message = socket.recv()
             current_time = time.time()

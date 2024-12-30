@@ -54,7 +54,7 @@ class manage_database:
             print("New database")
             boolExists = False
 
-        self.DBConn = sqlite3.connect(self.strPath) #SQLite3 will create a new database if a connection cannot be made
+        self.DBConn = sqlite3.connect(self.strPath, uri=True) #SQLite3 will create a new database if a connection cannot be made
         self.c = self.DBConn.cursor()
 
         #Solar Info
