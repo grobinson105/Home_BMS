@@ -69,7 +69,7 @@ class Home_BMS:
                         zmq_socket.disconnect(f"tcp://localhost:{port}")
                         ports_found = ports_found + 1
                         self.ports_used.append([ports_found, port])  # Append sensor and port
-                        print(f"Successfully bound {ports_found} to port {port}")
+                        #print(f"Successfully bound {ports_found} to port {port}")
                     except zmq.ZMQError as e:
                         print(f"Failed to bind {ports_found} to port {port}: {e}")
                 port = port + 1  # Try the next port if unavailable
@@ -81,9 +81,12 @@ class Home_BMS:
         else:
             self.ports_boolSuccess = True
             self.db_GUI_port = self.ports_used[0][1]
+            print("DB-GUI port: " + str(self.ports_used[0][1])
             self.db_parent_port = self.ports_used[1][1]
-            self.GUI_port = self.ports_used[2][1]
-            self.sensor_port = self.ports_used[3][1]
+            self.sensor_port = self.ports_used[2][1]
+            print("Sensor port: " + str(self.ports_used[2][1])
+            self.GUI_port = self.ports_used[3][1]
+            
 
     def database_create(self):
         self.BMS_DB = D_Database.manage_database(A_Initialise.dictGlobalInstructions, self.db_GUI_port)
