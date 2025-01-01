@@ -17,6 +17,7 @@ class Home_BMS:
         self.created_self = False
         self.sensor_server_initialised = threading.Event()
         self.GUI_initialised = threading.Event()
+        self.DB_initialised = threading.Event()
         self.sensor_server_live = False
         self.dictInstructions = A_Initialise.dictGlobalInstructions
         self.dp_2 = 2
@@ -103,8 +104,14 @@ class Home_BMS:
             
 
     def database_create(self):
+        
+        print("Initiating DB thread")
         self.BMS_DB = D_Database.manage_database(A_Initialise.dictGlobalInstructions, self.db_GUI_port)
-
+        while not self.BMS_DB.DB_initialised:
+            time.sleep(0.1)
+        print("DB is initialised")
+        self.DB_initialised.set()
+        
     def call_sensor_data(self):
         context = zmq.Context.instance()
         socket = context.socket(zmq.REQ)
@@ -171,16 +178,18 @@ class Home_BMS:
         
         print("Waiting for sensor server to initialise...")
         print("Waiting for GUI to be created...")
+        print("Waiting for DB to be created...")
         self.sensor_server_initialised.wait()
         self.GUI_initialised.wait()
-        print("Sensor server and GUI initialised. Starting sensor client thread.")
+        self.DB_initialised.wait()
+        print("Sensor server, DB server and GUI initialised. Starting sensor client thread.")
         
         while self.quit_sys == False:
             
             self.quit_sys = self.BMS_GUI.quit_sys
-            lstData = self.call_sensor_data()
-            print("Sensor data received: " + str(lstData))
-            Seconds_Elapsed = int(lstData[0]) #Used for pulse meter calculations
+            lstAll = self.call_sensor_data()
+            print("Sensor data received: " + str(lstAll))
+            Seconds_Elapsed = int(lstAll[0]) #Used for pulse meter calculations
             print("Seconds elapsed for sensor read: " + str(Seconds_Elapsed))
             
             #########################
@@ -190,7 +199,8 @@ class Home_BMS:
             
 
             #Solar records
-            lstSolar = lstData[1] # solar data is the item[1] in the list (item[0] is the seconds elapsed)
+            lstData = lstAll[1]
+            lstSolar = lstData[0] # solar data is the first item in lstData
             print("Solar data received: " + str(lstSolar))
             
             #Calculate solar thermal collected in period

@@ -5,7 +5,7 @@ import csv
 import datetime as dt
 import zmq
 import json
-
+import threading
 
 def create_table_string(dictInstructions, strTech):
     strTable = dictInstructions[strTech]['Defaults']['Database_Table_Name']
@@ -32,7 +32,7 @@ class manage_database:
         self.create(dictInstructions)
         self.db_port = db_port
         self.status_operate = True
-        self.db_open()
+        threading.Thread(target=self.db_open, daemon=True).start()
 
     def create(self, dictInstructions):
         #Test if DB exists
@@ -101,6 +101,8 @@ class manage_database:
 
             if dictInstructions['User_Inputs']['Zone'] == True:
                 self.c.execute(strZoneTable)
+        
+        self.DB_initialised = True
 
     def upload_data(self, strTable, arrFields, arrVals):
         if len(arrFields) > 0:
