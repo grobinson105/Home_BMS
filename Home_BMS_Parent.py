@@ -33,7 +33,7 @@ class Home_BMS:
             threading.Thread(target=self.database_create).start()
 
             # SENSORS
-            threading.Thread(target=self.sensors_thread()).start()
+            threading.Thread(target=self.sensors_thread).start()
 
             #GUI
             print("Starting GUI build")
