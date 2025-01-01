@@ -81,7 +81,7 @@ class Home_BMS:
         else:
             self.ports_boolSuccess = True
             self.db_GUI_port = self.ports_used[0][1]
-            print("DB-GUI port: " + str(self.ports_used[0][1])
+            print("DB-GUI port: " + str(self.ports_used[0][1]))
             self.db_parent_port = self.ports_used[1][1]
             self.sensor_port = self.ports_used[2][1]
             print("Sensor port: " + str(self.ports_used[2][1])
