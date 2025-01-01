@@ -44,8 +44,9 @@ class Home_BMS:
             threading.Thread(target=self.sensors_client_thread).start()
                         
             #GUI
+            threading.Thread(target=self.GUI_db_query_thread).start()
             print("Starting GUI build")
-            self.BMS_GUI = B_GUI.build_GUI(A_Initialise.dictGlobalInstructions, self.db_GUI_port)
+            self.BMS_GUI = B_GUI.build_GUI(A_Initialise.dictGlobalInstructions, self.GUI_parent_port)
             while not self.BMS_GUI.GUI_Created:
                 time.sleep(0.1)
             print("GUI is initialised")
@@ -167,24 +168,40 @@ class Home_BMS:
         method = getattr(self, method_name)
         return method(*args, **kwargs)
 
-    def extract_values(self, args):
+    def extract_values(self, function, args):
         context = zmq.Context.instance()
         socket = context.socket(zmq.REQ)
         socket.connect("tcp://localhost:" + str(self.db_parent_port))
-        lstPackage = [function, lstArgs]
+        lstPackage = [function, args]
         #print(lstPackage)
         data = json.dumps(lstPackage).encode("utf-8")
         #print("sending:" + str(data))
-        print("Parent: sending DB request via port " + str(self.db_parent_port))
+        print("Parent: requesting GUI data from DB " + str(self.db_parent_port))
         socket.send(data)
-        print("Parent: DB request sent. Waiting for response")
+        print("Parent: GUI DB request sent. Waiting for response")
         response = socket.recv()
-        print("Parent: DB response received")
+        print("Parent: DB response received for GUI")
         lstData = json.loads(response.decode("utf-8"))
         #print("GUI DATA = " + str(lstData))
         return lstData
 
-    def db_query_thread(self):
+    def DB_upload_data(self, function, args):
+        context = zmq.Context.instance()
+        socket = context.socket(zmq.REQ)
+        socket.connect("tcp://localhost:" + str(self.db_parent_port))
+        lstPackage = [function, args]
+        data = json.dumps(lstPackage).encode("utf-8")
+        #print("sending:" + str(data))
+        print("Parent: sending data to DB for upload " + str(self.db_parent_port))
+        socket.send(data)
+        print("Parent: DB data upload request sent. Waiting for response")
+        response = socket.recv()
+        print("Parent: DB data upload response received")
+        lstData = json.loads(response.decode("utf-8"))
+        #print("GUI DATA = " + str(lstData))
+        return lstData
+
+    def GUI_db_query_thread(self):
         context = zmq.Context.instance()
         socket = context.socket(zmq.REP)
         print("Parent using port for GUI communication: " + str(self.GUI_parent_port))
@@ -259,8 +276,9 @@ class Home_BMS:
             lstSolarVals = [item[1] for item in lstSolar]
             print("Solar Vals: " + str(lstSolarVals))
 
-            self.BMS_DB.upload_data(self.solar_table, lstSolarFields, lstSolarVals)
-            print("BMS DB uploaded: solar values")
+            lstSolarArgs = [self.solar_table, lstSolarFields, lstSolarVals]
+            self.DB_upload_data("upload_data", lstSolarArgs)
+            #print("BMS DB uploaded: solar values")
 
             #####################
             # UPDATE GUI thread #

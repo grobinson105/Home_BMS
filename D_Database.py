@@ -104,10 +104,12 @@ class manage_database:
 
             if dictInstructions['User_Inputs']['Zone'] == True:
                 self.c.execute(strZoneTable)
-        
 
+    def upload_data(self, args):
+        strTable = args[0]
+        arrFields = args[1]
+        arrVals = args[2]
 
-    def upload_data(self, strTable, arrFields, arrVals):
         if len(arrFields) > 0:
             listLength = len(arrFields) #determine the number of values being provided (allowing for multiple readings to be entered)
             for i in range(0,listLength): #for each item in the fields provided
