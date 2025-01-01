@@ -29,13 +29,12 @@ def create_table_string(dictInstructions, strTech):
     return lstReturn
 
 class manage_database:
-    def __init__(self, dictInstructions, db_port, parent_port):
-        self.db_port = db_port
+    def __init__(self, dictInstructions, parent_port):
         self.parent_port = parent_port
         self.status_operate = True
         self.task_queue = Queue()
         self.stop_event = threading.Event()
-        self.db_run()
+        self.db_run(dictInstructions)
 
     def create(self, dictInstructions):
         #Test if DB exists
@@ -264,7 +263,7 @@ class manage_database:
         method = getattr(self, method_name)
         return method(*args, **kwargs)
 
-    def db_run(self):
+    def db_run(self, dictInstructions):
         self.create(dictInstructions)
         self.DB_initialised = True
 
@@ -280,9 +279,9 @@ class manage_database:
             print("Received message: " + str(message))
             lstRequest = json.loads(message.decode("utf-8"))
             strFunction = lstRequest[0]
-            #print(strFunction)
+            print("DB receieved function to run from parent: " + str(strFunction))
             lstArgs = lstRequest[1]
-            #print(lstArgs)
+            print("DB arguments reveived for function to run from parent: " + str(lstArgs))
             lstReturn = self.call_method(strFunction, lstArgs) #globals()[strFunction](lstArgs)
             serialised_data = json.dumps(lstReturn).encode("utf-8")
             print("DB: sending response...")

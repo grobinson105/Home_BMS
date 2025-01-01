@@ -104,7 +104,7 @@ class Home_BMS:
     def database_create(self):
         
         print("Initiating DB thread")
-        self.BMS_DB = D_Database.manage_database(A_Initialise.dictGlobalInstructions, self.db_GUI_port, self.db_parent_port)
+        self.BMS_DB = D_Database.manage_database(A_Initialise.dictGlobalInstructions, self.db_parent_port)
         while not self.BMS_DB.DB_initialised:
             time.sleep(0.1)
         print("DB is initialised")
@@ -113,12 +113,12 @@ class Home_BMS:
     def call_sensor_data(self):
         context = zmq.Context.instance()
         socket = context.socket(zmq.REQ)
-        socket.connect("tcp://localhost:" + str(self.sensor_port))
+        socket.connect("tcp://localhost:" + str(self.sensor_parent_port))
         # GET SOLAR DATA
         lstPackage = self.quit_sys
         data = json.dumps(lstPackage).encode("utf-8")
         # print("sending:" + str(data))
-        print("Parent: sending sensor request via port " + str(self.sensor_port))
+        print("Parent: sending sensor request via port " + str(self.sensor_parent_port))
         socket.send(data)
         print("Parent: sensor request sent. Waiting for response")
         response = socket.recv()
@@ -208,15 +208,15 @@ class Home_BMS:
         socket.bind(f"tcp://*:{self.GUI_parent_port}")
         print("Parent connected to " + str(self.GUI_parent_port) + " to bind with GUI.")
 
-        while self.status_operate == True:
+        while self.quit_sys == False:
             print("Parent: waiting for GUI graph requests")
             message = socket.recv()
             print("Parent received message from GUI: " + str(message))
             lstRequest = json.loads(message.decode("utf-8"))
             strFunction = lstRequest[0]
-            #print(strFunction)
+            print("GUI function requested: " + str(strFunction))
             lstArgs = lstRequest[1]
-            #print(lstArgs)
+            print("GUI graph request arguments provided: " + str(lstArgs))
             lstReturn = self.call_method(strFunction, lstArgs) #globals()[strFunction](lstArgs)
             serialised_data = json.dumps(lstReturn).encode("utf-8")
             print("Parent: sending response...")
@@ -225,7 +225,7 @@ class Home_BMS:
 
     def sensors_server_thread(self):
         print("Initiating sensor server thread")
-        self.BMS_Sensors = E_Sensors.BMS_Sensors(self.sensor_port)
+        self.BMS_Sensors = E_Sensors.BMS_Sensors(self.sensor_parent_port)
         while not self.BMS_Sensors.sensor_server_live:
             time.sleep(0.1)
         print("Sensor server is initialised")
