@@ -258,8 +258,9 @@ class manage_database:
         return method(*args, **kwargs)
 
     def db_open(self):
-        context = zmq.Context()
+        context = zmq.Context.instance()
         socket = context.socket(zmq.REP)
+        print("DB using port: " + str(self.db_port) + " to bind with parent.")
         socket.bind("tcp://localhost:" + str(self.db_port))
         print("DB Connected to " + str(self.db_port))
         if self.status_operate == True:

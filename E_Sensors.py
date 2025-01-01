@@ -38,7 +38,7 @@ class BMS_Sensors:
     def create(self, port):
         self.Vref = 3.3 #MCP3008 Vref and Vdd when connected to the Pi via SPI
 
-        context = zmq.Context()
+        context = zmq.Context.instance()
         socket = context.socket(zmq.REP)
         socket.bind(f"tcp://*:{port}")
         self.continue_to_operate = True

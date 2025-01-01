@@ -84,7 +84,7 @@ class Home_BMS:
             print("DB-GUI port: " + str(self.ports_used[0][1]))
             self.db_parent_port = self.ports_used[1][1]
             self.sensor_port = self.ports_used[2][1]
-            print("Sensor port: " + str(self.ports_used[2][1])
+            print("Sensor port: " + str(self.ports_used[2][1]))
             self.GUI_port = self.ports_used[3][1]
             
 
@@ -92,7 +92,7 @@ class Home_BMS:
         self.BMS_DB = D_Database.manage_database(A_Initialise.dictGlobalInstructions, self.db_GUI_port)
 
     def call_sensor_data(self):
-        context = zmq.Context()
+        context = zmq.Context.instance()
         socket = context.socket(zmq.REQ)
         socket.connect("tcp://localhost:" + str(self.sensor_port))
         # GET SOLAR DATA

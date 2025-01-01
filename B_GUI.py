@@ -34,7 +34,7 @@ class build_GUI:
         print("quit")
 
     def request_db_data(self, function, lstArgs):
-        context = zmq.Context()
+        context = zmq.Context.instance()
         socket = context.socket(zmq.REQ)
         socket.connect("tcp://localhost:" + str(self.db_port))
         lstPackage = [function, lstArgs]
