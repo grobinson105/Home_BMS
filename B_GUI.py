@@ -15,11 +15,11 @@ import zmq
 import json
 
 class build_GUI:
-    def __init__(self, dictInstructions, db_port):
+    def __init__(self, dictInstructions, parent_port):
         self.RootWin = tk.Tk()  # Create the main GUI window
         self.quit_sys = False
         self.created_self = False
-        self.db_port = db_port
+        self.parent_port = parent_port
         self.create_master_window(dictInstructions)
         self.solar_table_name = dictInstructions['Solar_Inputs']['Defaults']['Database_Table_Name']
         self.HP_table_name = dictInstructions['HP_Inputs']['Defaults']['Database_Table_Name']
@@ -36,12 +36,12 @@ class build_GUI:
     def request_db_data(self, function, lstArgs):
         context = zmq.Context.instance()
         socket = context.socket(zmq.REQ)
-        socket.connect("tcp://localhost:" + str(self.db_port))
+        socket.connect("tcp://localhost:" + str(self.parent_port))
         lstPackage = [function, lstArgs]
         #print(lstPackage)
         data = json.dumps(lstPackage).encode("utf-8")
         #print("sending:" + str(data))
-        print("GUI: sending DB request via port " + str(self.db_port))
+        print("GUI: sending DB request via port " + str(self.parent_port))
         socket.send(data)
         print("GUI: DB request sent. Waiting for response")
         response = socket.recv()

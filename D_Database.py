@@ -6,6 +6,7 @@ import datetime as dt
 import zmq
 import json
 import threading
+from queue import Queue
 
 def create_table_string(dictInstructions, strTech):
     strTable = dictInstructions[strTech]['Defaults']['Database_Table_Name']
@@ -28,11 +29,13 @@ def create_table_string(dictInstructions, strTech):
     return lstReturn
 
 class manage_database:
-    def __init__(self, dictInstructions, db_port):
-        self.create(dictInstructions)
+    def __init__(self, dictInstructions, db_port, parent_port):
         self.db_port = db_port
+        self.parent_port = parent_port
         self.status_operate = True
-        threading.Thread(target=self.db_open, daemon=True).start()
+        self.task_queue = Queue()
+        self.stop_event = threading.Event()
+        self.db_run()
 
     def create(self, dictInstructions):
         #Test if DB exists
@@ -102,7 +105,7 @@ class manage_database:
             if dictInstructions['User_Inputs']['Zone'] == True:
                 self.c.execute(strZoneTable)
         
-        self.DB_initialised = True
+
 
     def upload_data(self, strTable, arrFields, arrVals):
         if len(arrFields) > 0:
@@ -259,17 +262,18 @@ class manage_database:
         method = getattr(self, method_name)
         return method(*args, **kwargs)
 
-    def db_open(self):
+    def db_run(self):
+        self.create(dictInstructions)
+        self.DB_initialised = True
+
         context = zmq.Context.instance()
         socket = context.socket(zmq.REP)
-        print("DB using port: " + str(self.db_port) + " to bind with parent.")
-        socket.bind(f"tcp://*:{self.db_port}")
-        print("DB Connected to " + str(self.db_port))
-        if self.status_operate == True:
-            print("DB using port " + str(self.db_port))
+        print("DB using port for parent communication: " + str(self.parent_port) + " to bind with parent.")
+        socket.bind(f"tcp://*:{self.parent_port}")
+        print("DB Connected to " + str(self.parent_port) + " to bind with parent.")
 
         while self.status_operate == True:
-            print("DB: waiting for requests")
+            print("DB: waiting for parent requests")
             message = socket.recv()
             print("Received message: " + str(message))
             lstRequest = json.loads(message.decode("utf-8"))

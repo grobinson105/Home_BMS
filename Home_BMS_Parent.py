@@ -95,18 +95,15 @@ class Home_BMS:
             self.ports_boolSuccess = False
         else:
             self.ports_boolSuccess = True
-            self.db_GUI_port = self.ports_used[0][1]
-            print("DB-GUI port: " + str(self.ports_used[0][1]))
+            self.GUI_parent_port = self.ports_used[0][1]
             self.db_parent_port = self.ports_used[1][1]
-            self.sensor_port = self.ports_used[2][1]
-            print("Sensor port: " + str(self.ports_used[2][1]))
-            self.GUI_port = self.ports_used[3][1]
+            self.sensor_parent_port = self.ports_used[2][1]
             
 
     def database_create(self):
         
         print("Initiating DB thread")
-        self.BMS_DB = D_Database.manage_database(A_Initialise.dictGlobalInstructions, self.db_GUI_port)
+        self.BMS_DB = D_Database.manage_database(A_Initialise.dictGlobalInstructions, self.db_GUI_port, self.db_parent_port)
         while not self.BMS_DB.DB_initialised:
             time.sleep(0.1)
         print("DB is initialised")
@@ -165,7 +162,50 @@ class Home_BMS:
         fluid_capacity = ethelyne_glycol_heat_capacity(glycol_mix)
         heat_load_wh = fluid_capacity * litres * (flow_temp - return_temp) * seconds_duration * (10**3) / (60**2)
         return heat_load_wh
-    
+
+    def call_method(self, method_name, *args, **kwargs):
+        method = getattr(self, method_name)
+        return method(*args, **kwargs)
+
+    def extract_values(self, args):
+        context = zmq.Context.instance()
+        socket = context.socket(zmq.REQ)
+        socket.connect("tcp://localhost:" + str(self.db_parent_port))
+        lstPackage = [function, lstArgs]
+        #print(lstPackage)
+        data = json.dumps(lstPackage).encode("utf-8")
+        #print("sending:" + str(data))
+        print("Parent: sending DB request via port " + str(self.db_parent_port))
+        socket.send(data)
+        print("Parent: DB request sent. Waiting for response")
+        response = socket.recv()
+        print("Parent: DB response received")
+        lstData = json.loads(response.decode("utf-8"))
+        #print("GUI DATA = " + str(lstData))
+        return lstData
+
+    def db_query_thread(self):
+        context = zmq.Context.instance()
+        socket = context.socket(zmq.REP)
+        print("Parent using port for GUI communication: " + str(self.GUI_parent_port))
+        socket.bind(f"tcp://*:{self.GUI_parent_port}")
+        print("Parent connected to " + str(self.GUI_parent_port) + " to bind with GUI.")
+
+        while self.status_operate == True:
+            print("Parent: waiting for GUI graph requests")
+            message = socket.recv()
+            print("Parent received message from GUI: " + str(message))
+            lstRequest = json.loads(message.decode("utf-8"))
+            strFunction = lstRequest[0]
+            #print(strFunction)
+            lstArgs = lstRequest[1]
+            #print(lstArgs)
+            lstReturn = self.call_method(strFunction, lstArgs) #globals()[strFunction](lstArgs)
+            serialised_data = json.dumps(lstReturn).encode("utf-8")
+            print("Parent: sending response...")
+            socket.send(serialised_data)
+            print("DB: response sent.")
+
     def sensors_server_thread(self):
         print("Initiating sensor server thread")
         self.BMS_Sensors = E_Sensors.BMS_Sensors(self.sensor_port)
