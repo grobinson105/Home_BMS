@@ -11,7 +11,6 @@ class BMS_Sensors:
     def __init__(self, port):
         self.continue_to_operate = True
         self.create(port)
-        self.last_request_time = None
         self.dictInstructions = A_Initialise.dictGlobalInstructions
 
         self.solar_pressure_SQL = self.dictInstructions['Solar_Inputs']['GUI_Information']['SYS_Pressure']['SQL_Title']
@@ -36,6 +35,9 @@ class BMS_Sensors:
 
 
     def create(self, port):
+        self.last_request_time = None
+        self.lstPressureReading = []
+        
         self.Vref = 3.3 #MCP3008 Vref and Vdd when connected to the Pi via SPI
 
         context = zmq.Context.instance()
@@ -208,6 +210,7 @@ class BMS_Sensors:
 
         while self.continue_to_operate == True:
             self.lstPressureReading.append(self.pressure_5V_via_MCP3008(lstArgs))
+            print("Pressure readings: " + str(self.lstPressureReading))
             time.sleep(1)
 
     def collector_sensor_read_thread(self):

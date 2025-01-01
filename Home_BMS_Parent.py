@@ -7,10 +7,11 @@ import E_Sensors
 import threading
 import time
 from datetime import datetime
+import json
 
 # Function to check if a port is available
 class Home_BMS:
-    def __init__(self):
+    def __init__(self): 
         self.last_read = datetime.now()
         self.quit_sys = False
         self.created_self = False
@@ -30,11 +31,14 @@ class Home_BMS:
 
         if self.ports_boolSuccess == True:
             #Database
+            print("Database thread launched")
             threading.Thread(target=self.database_create).start()
 
             # SENSORS
-            threading.Thread(target=self.sensors_thread).start()
-
+            print("Sensors thread launched")
+            threading.Thread(target=self.sensors_client_thread).start()
+            threading.Thread(target=self.sensors_server_thread).start()
+            
             #GUI
             print("Starting GUI build")
             self.BMS_GUI = B_GUI.build_GUI(A_Initialise.dictGlobalInstructions, self.db_GUI_port)
@@ -147,10 +151,12 @@ class Home_BMS:
         fluid_capacity = ethelyne_glycol_heat_capacity(glycol_mix)
         heat_load_wh = fluid_capacity * litres * (flow_temp - return_temp) * seconds_duration * (10**3) / (60**2)
         return heat_load_wh
-
-    def sensors_thread(self):
+    
+    def sensors_server_thread(self):
         self.BMS_Sensors = E_Sensors.BMS_Sensors(self.sensor_port)
-
+    
+    def sensors_client_thread(self):
+        
         while self.quit_sys == False:
             lstData = self.call_sensor_data()
 
@@ -196,17 +202,4 @@ class Home_BMS:
             seconds_until_next_minute = 60 - now.second - now.microsecond / 1_000_000
             time.sleep(seconds_until_next_minute )
 
-# launch database
-#to complete
-
 Home_BMS = Home_BMS()
-
-'''
-# launch Sensor 2
-### MAIN RUN ###
-BMS_GUI = build_GUI(dictGlobalInstructions)
-dictGlobalInstructions['General_Inputs']['GUI_BMS'] = BMS_GUI
-BMS_GUI.created_self = True
-BMS_GUI.initiate_all_threads()
-BMS_GUI.RootWin.mainloop()
-'''
