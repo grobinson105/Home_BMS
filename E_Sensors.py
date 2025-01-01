@@ -77,9 +77,9 @@ class BMS_Sensors:
             print("Sensors: sending response...")
             socket.send(serialised_data)
             print("Sensors: response sent.")
-            
-           if message == True:                
-                self.continue_to_operate = False:
+
+            if message == True:
+                self.continue_to_operate = False
 
     def collate_sensors(self):
         ###############
