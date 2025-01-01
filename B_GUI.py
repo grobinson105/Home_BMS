@@ -571,6 +571,7 @@ class build_GUI:
             self.populate_ZONE_tab(dictInstructions)
 
         self.TAB_CONTROL.pack(expand=1, fill="both")
+        self.GUI_Created = True
         self.time_created = dt.datetime.now()
 
     def populate_solar_tab(self, dictInstructions):

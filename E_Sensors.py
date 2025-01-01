@@ -11,8 +11,8 @@ class BMS_Sensors:
     def __init__(self, port):
         self.continue_to_operate = True
         self.sensor_server_live = False
-        self.create(port)
         self.dictInstructions = A_Initialise.dictGlobalInstructions
+        self.Vref = 3.3
 
         # Initialize attributes used by threads
         self.lstPressureReading = []
@@ -32,16 +32,17 @@ class BMS_Sensors:
         self.solar_electricity_SQL = self.dictInstructions['Solar_Inputs']['GUI_Information']['Solar_pump_electricity']['SQL_Title']
 
         self.restart_threads()
-
+        threading.Thread(target=self.create, args=(port,), daemon=True).start()
+        
 
     def restart_threads(self):
         threading.Thread(target=self.pressure_sensor_read_thread, daemon=True).start() #start solar pressure sensor thread
-        #threading.Thread(target=self.collector_sensor_read_thread(), daemon=True).start() #start solar collector temperature sensor thread
-        #threading.Thread(target=self.tank_top_sensor_read_thread(), daemon=True).start() # start solar tank top temperature sensor thread
-        #threading.Thread(target=self.tank_mid_sensor_read_thread(), daemon=True).start()  # start solar tank mid temperature sensor thread
-        #threading.Thread(target=self.tank_bot_sensor_read_thread(), daemon=True).start()  # start solar tank bottom temperature sensor thread
-        #threading.Thread(target=self.solar_hot_water_meter_read_thread(), daemon=True).start()  # start solar hot water pulse meter thread
-        #threading.Thread(target=self.solar_electricity_meter_read_thread(), daemon=True).start()  # start solar electricity pulse meter thread
+        #threading.Thread(target=self.collector_sensor_read_thread, daemon=True).start() #start solar collector temperature sensor thread
+        #threading.Thread(target=self.tank_top_sensor_read_thread, daemon=True).start() # start solar tank top temperature sensor thread
+        #threading.Thread(target=self.tank_mid_sensor_read_thread, daemon=True).start()  # start solar tank mid temperature sensor thread
+        #threading.Thread(target=self.tank_bot_sensor_read_thread, daemon=True).start()  # start solar tank bottom temperature sensor thread
+        #threading.Thread(target=self.solar_hot_water_meter_read_thread, daemon=True).start()  # start solar hot water pulse meter thread
+        #threading.Thread(target=self.solar_electricity_meter_read_thread, daemon=True).start()  # start solar electricity pulse meter thread
 
 
     def create(self, port):
@@ -183,10 +184,10 @@ class BMS_Sensors:
         MPC3008_Channel = lstArgs[2]
 
         R1 = 10000  # 10k ohm thermistor - worth checking the actual resistance with multi-meter and updating
-        Vref = 3.3  # The Raspberry Pi's SPI pins are 3.3V so the supply voltage should also be 3.3V not 5V
+        #Vref = 3.3  # The Raspberry Pi's SPI pins are 3.3V so the supply voltage should also be 3.3V not 5V
 
-        voltage = self.read_MCP3008_SPI(SPIBus, SPIChannel, MPC3008_Channel, Vref)
-        thermistor_resistance = self.R2_resistance_OHM(R1, Vref, voltage)
+        voltage = self.read_MCP3008_SPI(SPIBus, SPIChannel, MPC3008_Channel, self.Vref)
+        thermistor_resistance = self.R2_resistance_OHM(R1, self.Vref, voltage)
         TempDegC = self.TenK_NTC_Thermistor(thermistor_resistance)
         return TempDegC
 

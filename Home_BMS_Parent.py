@@ -15,6 +15,8 @@ class Home_BMS:
         self.last_read = datetime.now()
         self.quit_sys = False
         self.created_self = False
+        self.sensor_server_initialised = threading.Event()
+        self.GUI_initialised = threading.Event()
         self.sensor_server_live = False
         self.dictInstructions = A_Initialise.dictGlobalInstructions
         self.dp_2 = 2
@@ -43,6 +45,10 @@ class Home_BMS:
             #GUI
             print("Starting GUI build")
             self.BMS_GUI = B_GUI.build_GUI(A_Initialise.dictGlobalInstructions, self.db_GUI_port)
+            while not self.BMS_GUI.GUI_Created:
+                time.sleep(0.1)
+            print("GUI is initialised")
+            self.GUI_initialised.set()
             self.BMS_GUI.created_self = True    
             print("GUI created: " + str(self.BMS_GUI.created_self))        
             self.BMS_GUI.RootWin.mainloop()
@@ -156,58 +162,66 @@ class Home_BMS:
     def sensors_server_thread(self):
         print("Initiating sensor server thread")
         self.BMS_Sensors = E_Sensors.BMS_Sensors(self.sensor_port)
+        while not self.BMS_Sensors.sensor_server_live:
+            time.sleep(0.1)
+        print("Sensor server is initialised")
+        self.sensor_server_initialised.set()
         
     def sensors_client_thread(self):
         
+        print("Waiting for sensor server to initialise...")
+        print("Waiting for GUI to be created...")
+        self.sensor_server_initialised.wait()
+        self.GUI_initialised.wait()
+        print("Sensor server and GUI initialised. Starting sensor client thread.")
+        
         while self.quit_sys == False:
-            print("Is sensor server live: " + str(self.sensor_server_live))
             
-            if self.sensor_server_live == True:
-                lstData = self.call_sensor_data()
-                Seconds_Elapsed = int(lstData[0]) #Used for pulse meter calculations
-                
-                #########################
-                # NEW DB RECORDS thread #
-                #########################
+            self.quit_sys = self.BMS_GUI.quit_sys
+            lstData = self.call_sensor_data()
+            Seconds_Elapsed = int(lstData[0]) #Used for pulse meter calculations
+            
+            #########################
+            # NEW DB RECORDS thread #
+            #########################
 
-                
+            
 
-                #Solar records
-                lstSolar = lstData[1] # solar data is the item[1] in the list (item[0] is the seconds elapsed)
+            #Solar records
+            lstSolar = lstData[1] # solar data is the item[1] in the list (item[0] is the seconds elapsed)
 
-                #Calculate solar thermal collected in period
-                #lstSolarWaterFlowCount = next((sublist for sublist in lstSolar if sublist[0] == self.solar_flow_SQL), None)
-                fltSolarWaterFlow = float(lstSolarWaterFlowCount[1]) * self.solar_flow_pulse_value
-                #for item in lstSolar:
-                #    if item[0] == self.solar_flow_SQL:
-                #        item[1] = fltSolarWaterFlow #Update the solar data with the litres rather than pulse count
-                #        break
+            #Calculate solar thermal collected in period
+            #lstSolarWaterFlowCount = next((sublist for sublist in lstSolar if sublist[0] == self.solar_flow_SQL), None)
+            fltSolarWaterFlow = float(lstSolarWaterFlowCount[1]) * self.solar_flow_pulse_value
+            #for item in lstSolar:
+            #    if item[0] == self.solar_flow_SQL:
+            #        item[1] = fltSolarWaterFlow #Update the solar data with the litres rather than pulse count
+            #        break
 
-                #lstCollectorTemp = next((sublist for sublist in lstSolar if sublist[0] == self.collector_temp_SQL), None)
-                #fltCollector = float(lstCollectorTemp[1])
+            #lstCollectorTemp = next((sublist for sublist in lstSolar if sublist[0] == self.collector_temp_SQL), None)
+            #fltCollector = float(lstCollectorTemp[1])
 
-                lstSolarFields = [item[0] for item in lstSolar]
-                print("Solar fields: " + str(lstSolarFields))
-                lstSolarVals = [float(item[1]) for item in lstSolar]
-                print("Solar Vals: " + str(lstSolarVals))
+            lstSolarFields = [item[0] for item in lstSolar]
+            print("Solar fields: " + str(lstSolarFields))
+            lstSolarVals = [float(item[1]) for item in lstSolar]
+            print("Solar Vals: " + str(lstSolarVals))
 
-                self.BMS_DB.upload_data(self.solar_table, lstSolarFields, lstSolarVals)
-                print("BMS DB uploaded: solar values")
+            self.BMS_DB.upload_data(self.solar_table, lstSolarFields, lstSolarVals)
+            print("BMS DB uploaded: solar values")
 
-                #####################
-                # UPDATE GUI thread #
-                #####################
+            #####################
+            # UPDATE GUI thread #
+            #####################
 
-                #Solar tab
-                lblPressure = self.dictInstructions['Solar_Inputs']['GUI_Information']['Heat_capacity']['GUI_Val']
-                solar_pressure = f"{value:.{self.dp_0}f}"
-                print("Solar pressure: " + str(solar_pressure))
-                lblPressure.config(text=solar_pressure)
+            #Solar tab
+            lblPressure = self.dictInstructions['Solar_Inputs']['GUI_Information']['Heat_capacity']['GUI_Val']
+            solar_pressure = f"{value:.{self.dp_0}f}"
+            print("Solar pressure: " + str(solar_pressure))
+            lblPressure.config(text=solar_pressure)
 
             now = datetime.now()
             seconds_until_next_minute = 60 - now.second - now.microsecond / 1_000_000
             print("Seconds until next sensor check: " + str(seconds_until_next_minute))
             time.sleep(seconds_until_next_minute )
-            self.sensor_server_live = self.BMS_Sensors.sensor_server_live
             
 Home_BMS = Home_BMS()

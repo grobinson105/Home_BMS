@@ -1,4 +1,4 @@
-#import RPi.GPIO as GPIO
+import RPi.GPIO as GPIO
 from time import strftime, gmtime
 #from PIL import Image, ImageTk
 import datetime as dt
@@ -59,16 +59,16 @@ lngScreenHeight = 480 #Pixel height of screen used to display the GUI
 lngScreenWidth = 800 #Pixel width of screen used to display the GUI
 
 #GPIO SET UP
-#GPIO.setwarnings(False)
-#GPIO.setmode(GPIO.BCM)
-#GPIO.setup(4, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
-#GPIO.setup(17, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
-#GPIO.setup(27, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
-#GPIO.setup(22, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
-#GPIO.setup(5, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
-#GPIO.setup(6, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
-#GPIO.setup(13, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
-#GPIO.setup(19, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
+GPIO.setwarnings(False)
+GPIO.setmode(GPIO.BCM)
+GPIO.setup(4, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
+GPIO.setup(17, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
+GPIO.setup(27, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
+GPIO.setup(22, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
+GPIO.setup(5, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
+GPIO.setup(6, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
+GPIO.setup(13, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
+GPIO.setup(19, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
 
 #Sensor wiring and data reading
 #If sensor or derived value then list[1] == F_Sensors/H_Derived_Values function with list[2:] being function arguments
