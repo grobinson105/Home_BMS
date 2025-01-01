@@ -13,6 +13,15 @@ class BMS_Sensors:
         self.create(port)
         self.dictInstructions = A_Initialise.dictGlobalInstructions
 
+        # Initialize attributes used by threads
+        self.lstPressureReading = []
+        self.lstCollector = []
+        self.lstTankTop = []
+        self.lstTankMid = []
+        self.lstTankBot = []
+        self.lstSolarWater = []
+        self.lstSolarElectricity = []
+
         self.solar_pressure_SQL = self.dictInstructions['Solar_Inputs']['GUI_Information']['SYS_Pressure']['SQL_Title']
         self.solar_collector_SQL = self.dictInstructions['Solar_Inputs']['GUI_Information']['Collector_temp']['SQL_Title']
         self.solar_tank_top_SQL = self.dictInstructions['Solar_Inputs']['GUI_Information']['Tank_top_temp']['SQL_Title']
