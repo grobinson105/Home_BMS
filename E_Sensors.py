@@ -77,6 +77,9 @@ class BMS_Sensors:
             print("Sensors: sending response...")
             socket.send(serialised_data)
             print("Sensors: response sent.")
+            
+           if message == True:                
+                self.continue_to_operate = False:
 
     def collate_sensors(self):
         ###############
@@ -85,45 +88,45 @@ class BMS_Sensors:
 
         #PRESSURE SENSOR
         if len(self.lstPressureReading) != 0:
-            avSolarPressure = sum(item[0] for item in self.lstPressureReading) / len(self.lstPressureReading)
+            avSolarPressure = sum(self.lstPressureReading) / len(self.lstPressureReading)
         else:
             avSolarPressure = 0
         self.lstPressureReading = []
 
         #Collector temperature
         if len(self.lstCollector) != 0:
-            avSolarCollector = sum(item[0] for item in self.lstCollector) / len(self.lstCollector)
+            avSolarCollector = sum(self.lstCollector) / len(self.lstCollector)
         else:
             avSolarCollector = 0
         self.lstCollector = []
 
         #Top cylinder temperature
         if len(self.lstTankTop) != 0:
-            avTankTop = sum(item[0] for item in self.lstTankTop) / len(self.lstTankTop)
+            avTankTop = sum(self.lstTankTop) / len(self.lstTankTop)
         else:
             avTankTop = 0
         self.lstTankTop = []
 
         #Mid cylinder temperature
         if len(self.lstTankMid) != 0:
-            avTankMid = sum(item[0] for item in self.lstTankMid) / len(self.lstTankMid)
+            avTankMid = sum(self.lstTankMid) / len(self.lstTankMid)
         else:
             avTankMid = 0
         self.lstTankMid = []
 
         #Bottom cylinder temperature
         if len(self.lstTankBot) != 0:
-            avTankBot = sum(item[0] for item in self.lstTankBot) / len(self.lstTankBot)
+            avTankBot = sum(self.lstTankBot) / len(self.lstTankBot)
         else:
             avTankBot = 0
         self.lstTankBot = []
 
         #Solar hot water flow meter
-        total_solar_flow_in_period = sum(item[0] for item in self.lstSolarWater)
+        total_solar_flow_in_period = sum(self.lstSolarWater)
         self.lstsolarWater = []
 
         #Solar hot water flow meter
-        total_solar_electricity_in_period = sum(item[0] for item in self.lstSolarElectricity)
+        total_solar_electricity_in_period = sum(self.lstSolarElectricity)
         self.lstSolarElectricity = []
 
         dictSolarData = [[self.solar_pressure_SQL, avSolarPressure],
@@ -134,7 +137,7 @@ class BMS_Sensors:
                             [self.solar_flow_SQL, total_solar_flow_in_period],
                             [self.solar_electricity_SQL, total_solar_electricity_in_period]]
 
-        dictSolarData = [[self.solar_pressure_SQL, avSolarPressure]]
+        dictSolarData = [[ self.solar_pressure_SQL, avSolarPressure]]
         dictData = [dictSolarData]
 
         return dictData

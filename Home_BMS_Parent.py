@@ -110,7 +110,7 @@ class Home_BMS:
         socket = context.socket(zmq.REQ)
         socket.connect("tcp://localhost:" + str(self.sensor_port))
         # GET SOLAR DATA
-        lstPackage = ['SOLAR']
+        lstPackage = self.quit_sys
         data = json.dumps(lstPackage).encode("utf-8")
         # print("sending:" + str(data))
         print("Parent: sending sensor request via port " + str(self.sensor_port))
@@ -179,7 +179,9 @@ class Home_BMS:
             
             self.quit_sys = self.BMS_GUI.quit_sys
             lstData = self.call_sensor_data()
+            print("Sensor data received: " + str(lstData))
             Seconds_Elapsed = int(lstData[0]) #Used for pulse meter calculations
+            print("Seconds elapsed for sensor read: " + str(Seconds_Elapsed))
             
             #########################
             # NEW DB RECORDS thread #
@@ -189,10 +191,11 @@ class Home_BMS:
 
             #Solar records
             lstSolar = lstData[1] # solar data is the item[1] in the list (item[0] is the seconds elapsed)
-
+            print("Solar data received: " + str(lstSolar))
+            
             #Calculate solar thermal collected in period
             #lstSolarWaterFlowCount = next((sublist for sublist in lstSolar if sublist[0] == self.solar_flow_SQL), None)
-            fltSolarWaterFlow = float(lstSolarWaterFlowCount[1]) * self.solar_flow_pulse_value
+            #fltSolarWaterFlow = float(lstSolarWaterFlowCount[1]) * self.solar_flow_pulse_value
             #for item in lstSolar:
             #    if item[0] == self.solar_flow_SQL:
             #        item[1] = fltSolarWaterFlow #Update the solar data with the litres rather than pulse count
@@ -203,7 +206,7 @@ class Home_BMS:
 
             lstSolarFields = [item[0] for item in lstSolar]
             print("Solar fields: " + str(lstSolarFields))
-            lstSolarVals = [float(item[1]) for item in lstSolar]
+            lstSolarVals = [item[1] for item in lstSolar]
             print("Solar Vals: " + str(lstSolarVals))
 
             self.BMS_DB.upload_data(self.solar_table, lstSolarFields, lstSolarVals)
