@@ -30,15 +30,18 @@ class Home_BMS:
 
         if self.ports_boolSuccess == True:
             #Database
-            threading.Thread(target=self.database_create, daemon=True).start()
-
-            #GUI
-            self.BMS_GUI = B_GUI.build_GUI(A_Initialise.dictGlobalInstructions, self.db_GUI_port)
-            self.BMS_GUI.created_self = True
+            threading.Thread(target=self.database_create).start()
 
             # SENSORS
-            threading.Thread(target=self.sensors_thread(), daemon=True).start()
+            threading.Thread(target=self.sensors_thread()).start()
 
+            #GUI
+            print("Starting GUI build")
+            self.BMS_GUI = B_GUI.build_GUI(A_Initialise.dictGlobalInstructions, self.db_GUI_port)
+            self.BMS_GUI.created_self = True    
+            print("GUI created: " + str(self.BMS_GUI.created_self))        
+            self.BMS_GUI.RootWin.mainloop()
+        
         else:
             print("Unable to initialise BMS due to lack of available ports")
 
@@ -69,7 +72,7 @@ class Home_BMS:
                         zmq_socket.disconnect(f"tcp://localhost:{port}")
                         ports_found = ports_found + 1
                         self.ports_used.append([ports_found, port])  # Append sensor and port
-                        #print(f"Successfully bound {ports_found} to port {port}")
+                        print(f"Successfully bound {ports_found} to port {port}")
                     except zmq.ZMQError as e:
                         print(f"Failed to bind {ports_found} to port {port}: {e}")
                 port = port + 1  # Try the next port if unavailable
@@ -197,7 +200,6 @@ class Home_BMS:
 #to complete
 
 Home_BMS = Home_BMS()
-Home_BMS.BMS_GUI.RootWin.mainloop()
 
 '''
 # launch Sensor 2
