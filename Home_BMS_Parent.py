@@ -31,6 +31,7 @@ class Home_BMS:
         self.collector_temp_SQL =  self.dictInstructions['Solar_Inputs']['GUI_Information']['Collector_temp']['SQL_Title']
         self.tank_temp_SQL =  self.dictInstructions['Solar_Inputs']['GUI_Information']['Tank_bot_temp']['SQL_Title']
         self.collector_glycol =  self.dictInstructions['User_Inputs']['Glycol_Mix']
+        self.collector_heat_load_SQL =  self.dictInstructions['Solar_Inputs']['GUI_Information']['Heat_load']['SQL_Title']
 
         self.allocate_ports()
 
@@ -314,7 +315,7 @@ class Home_BMS:
             #heat transferred in period
             solar_heat_transferred = self.calculate_heat_wh(self.collector_glycol, fltSolarWaterFlow, lstSolarVals[0], lstSolarVals[4], Seconds_Elapsed)
             print("Heat transferred in period (wh): " + str(solar_heat_transferred))
-            lstSolarFields.append(self.solar_electricity_SQL)
+            lstSolarFields.append(self.collector_heat_load_SQL)
             print("Solar fields: " + str(lstSolarFields))
             lstSolarVals.append(solar_heat_transferred)
 
