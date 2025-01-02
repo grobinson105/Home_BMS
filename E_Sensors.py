@@ -42,7 +42,7 @@ class BMS_Sensors:
         threading.Thread(target=self.tank_mid_sensor_read_thread, daemon=True).start()  # start solar tank mid temperature sensor thread
         threading.Thread(target=self.tank_bot_sensor_read_thread, daemon=True).start()  # start solar tank bottom temperature sensor thread
         threading.Thread(target=self.solar_hot_water_meter_read_thread, daemon=True).start()  # start solar hot water pulse meter thread
-        #threading.Thread(target=self.solar_electricity_meter_read_thread, daemon=True).start()  # start solar electricity pulse meter thread
+        threading.Thread(target=self.solar_electricity_meter_read_thread, daemon=True).start()  # start solar electricity pulse meter thread
 
 
     def create(self, port):
@@ -145,12 +145,6 @@ class BMS_Sensors:
                             [self.solar_flow_SQL, total_solar_flow_in_period],
                             [self.solar_electricity_SQL, total_solar_electricity_in_period]]
 
-        dictSolarData = [[ self.solar_pressure_SQL, avSolarPressure], 
-                                [self.solar_collector_SQL, avSolarCollector],
-                                [self.solar_tank_top_SQL, avTankTop],
-                                [self.solar_tank_mid_SQL, avTankMid],
-                                [self.solar_tank_bot_SQL, avTankBot],
-                                [self.solar_flow_SQL, total_solar_flow_in_period]]
         dictData = [dictSolarData]
 
         return dictData

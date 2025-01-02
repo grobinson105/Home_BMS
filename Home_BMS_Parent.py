@@ -293,11 +293,13 @@ class Home_BMS:
                 if item[0] == self.solar_flow_SQL:
                     item[1] = fltSolarWaterFlow #Update the solar data with the litres rather than pulse count
                     break
-
+            
+            
+            
             lstSolarFields = [item[0] for item in lstSolar]
-            print("Solar fields: " + str(lstSolarFields))
+            #print("Solar fields: " + str(lstSolarFields))
             lstSolarVals = [item[1] for item in lstSolar]
-            print("Solar Vals: " + str(lstSolarVals))
+            #print("Solar Vals: " + str(lstSolarVals))
 
             lstSolarArgs = [[self.solar_table], lstSolarFields, lstSolarVals]
             self.DB_upload_data(lstSolarArgs)
