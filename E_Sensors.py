@@ -282,6 +282,7 @@ class BMS_Sensors:
             if last_state == GPIO.HIGH and current_state == GPIO.LOW:
                 self.lstSolarWater.append([1])
                 print("Pulse from solar hot water")
+            last_state = current_state
             time.sleep(0.01)
 
     def solar_electricity_meter_read_thread(self):
