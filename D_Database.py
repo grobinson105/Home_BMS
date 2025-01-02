@@ -30,12 +30,13 @@ def create_table_string(dictInstructions, strTech):
 
 class manage_database:
     def __init__(self, dictInstructions, parent_port):
+        self.DB_initialised = False
         self.parent_port = parent_port
         self.status_operate = True
         self.task_queue = Queue()
         self.stop_event = threading.Event()
-        self.db_run(dictInstructions)
-
+        threading.Thread(target=self.db_run, args=(dictInstructions,), daemon=True).start()
+        
     def create(self, dictInstructions):
         #Test if DB exists
         strDBLoc = dictInstructions['User_Inputs']['DB_Location']
@@ -105,7 +106,7 @@ class manage_database:
                 self.c.execute(strZoneTable)
 
     def upload_data(self, args):
-        strTable = args[0]
+        strTable = args[0][0]
         arrFields = args[1]
         arrVals = args[2]
 
@@ -265,14 +266,13 @@ class manage_database:
 
     def db_run(self, dictInstructions):
         self.create(dictInstructions)
-        self.DB_initialised = True
-
         context = zmq.Context.instance()
         socket = context.socket(zmq.REP)
         print("DB using port for parent communication: " + str(self.parent_port) + " to bind with parent.")
         socket.bind(f"tcp://*:{self.parent_port}")
         print("DB Connected to " + str(self.parent_port) + " to bind with parent.")
-
+        self.DB_initialised = True
+        
         while self.status_operate == True:
             print("DB: waiting for parent requests")
             message = socket.recv()

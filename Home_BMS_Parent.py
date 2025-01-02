@@ -70,7 +70,7 @@ class Home_BMS:
         self.ports_used = []
 
         # Define sensor names and desired ports
-        ports_count = 4
+        ports_count = 3
         sensors = [f"sensor_{i + 1}" for i in range(ports_count)]  # e.g., sensor_1, sensor_2, ...
         starting_port = 5555
         ports_found = 0
@@ -168,13 +168,12 @@ class Home_BMS:
         method = getattr(self, method_name)
         return method(*args, **kwargs)
 
-    def extract_values(self, function, args):
+    def extract_values(self, args):
         context = zmq.Context.instance()
         socket = context.socket(zmq.REQ)
         socket.connect("tcp://localhost:" + str(self.db_parent_port))
-        lstPackage = [function, args]
         #print(lstPackage)
-        data = json.dumps(lstPackage).encode("utf-8")
+        data = json.dumps(args).encode("utf-8")
         #print("sending:" + str(data))
         print("Parent: requesting GUI data from DB " + str(self.db_parent_port))
         socket.send(data)
@@ -185,11 +184,11 @@ class Home_BMS:
         #print("GUI DATA = " + str(lstData))
         return lstData
 
-    def DB_upload_data(self, function, args):
+    def DB_upload_data(self, args):
         context = zmq.Context.instance()
         socket = context.socket(zmq.REQ)
         socket.connect("tcp://localhost:" + str(self.db_parent_port))
-        lstPackage = [function, args]
+        lstPackage = ["upload_data", args]
         data = json.dumps(lstPackage).encode("utf-8")
         #print("sending:" + str(data))
         print("Parent: sending data to DB for upload " + str(self.db_parent_port))
@@ -217,7 +216,7 @@ class Home_BMS:
             print("GUI function requested: " + str(strFunction))
             lstArgs = lstRequest[1]
             print("GUI graph request arguments provided: " + str(lstArgs))
-            lstReturn = self.call_method(strFunction, lstArgs) #globals()[strFunction](lstArgs)
+            lstReturn = self.call_method(strFunction, lstRequest) #globals()[strFunction](lstArgs)
             serialised_data = json.dumps(lstReturn).encode("utf-8")
             print("Parent: sending response...")
             socket.send(serialised_data)
@@ -276,8 +275,8 @@ class Home_BMS:
             lstSolarVals = [item[1] for item in lstSolar]
             print("Solar Vals: " + str(lstSolarVals))
 
-            lstSolarArgs = [self.solar_table, lstSolarFields, lstSolarVals]
-            self.DB_upload_data("upload_data", lstSolarArgs)
+            lstSolarArgs = [[self.solar_table], lstSolarFields, lstSolarVals]
+            self.DB_upload_data(lstSolarArgs)
             #print("BMS DB uploaded: solar values")
 
             #####################
@@ -285,11 +284,36 @@ class Home_BMS:
             #####################
 
             #Solar tab
-            lblPressure = self.dictInstructions['Solar_Inputs']['GUI_Information']['Heat_capacity']['GUI_Val']
-            solar_pressure = f"{value:.{self.dp_0}f}"
-            print("Solar pressure: " + str(solar_pressure))
-            lblPressure.config(text=solar_pressure)
-
+            lblPressure = self.dictInstructions['Solar_Inputs']['GUI_Information']['SYS_Pressure']['GUI_Val']
+            solar_pressure = lstSolarVals[0]
+            solar_pressure_str = f"{solar_pressure:.{self.dp_2}f}"
+            #print("Solar pressure: " + str(solar_pressure))
+            lblPressure.config(text=solar_pressure_str)
+            
+            lblCollector = self.dictInstructions['Solar_Inputs']['GUI_Information']['Collector_temp']['GUI_Val']
+            collector_temp = lstSolarVals[1]
+            collector_temp_str = f"{collector_temp:.{self.dp_2}f}"
+            #print("Collector temp: " + str(solar_pressure))
+            lblCollector.config(text=collector_temp_str)
+            
+            lblTankTop = self.dictInstructions['Solar_Inputs']['GUI_Information']['Tank_top_temp']['GUI_Val']
+            tank_top_temp = lstSolarVals[2]
+            tank_top_temp_str = f"{tank_top_temp:.{self.dp_2}f}"
+            #print("Tank top temp: " + str(tank_top_temp))
+            lblTankTop.config(text=tank_top_temp_str)
+            
+            lblTankMid = self.dictInstructions['Solar_Inputs']['GUI_Information']['Tank_temp']['GUI_Val']
+            tank_mid_temp = lstSolarVals[3]
+            tank_mid_temp_str = f"{tank_mid_temp:.{self.dp_2}f}"
+            #print("Tank mid temp: " + str(tank_mid_temp))
+            lblTankMid.config(text=tank_mid_temp_str)
+            
+            lblTankBot = self.dictInstructions['Solar_Inputs']['GUI_Information']['Tank_bot_temp']['GUI_Val']
+            tank_bot_temp = lstSolarVals[4]
+            tank_bot_temp_str = f"{tank_bot_temp:.{self.dp_2}f}"
+            #print("Tank bottom temp: " + str(tank_bot_temp))
+            lblTankBot.config(text=tank_bot_temp_str)
+            
             now = datetime.now()
             seconds_until_next_minute = 60 - now.second - now.microsecond / 1_000_000
             print("Seconds until next sensor check: " + str(seconds_until_next_minute))

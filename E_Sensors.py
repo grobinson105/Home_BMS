@@ -37,11 +37,11 @@ class BMS_Sensors:
 
     def restart_threads(self):
         threading.Thread(target=self.pressure_sensor_read_thread, daemon=True).start() #start solar pressure sensor thread
-        #threading.Thread(target=self.collector_sensor_read_thread, daemon=True).start() #start solar collector temperature sensor thread
-        #threading.Thread(target=self.tank_top_sensor_read_thread, daemon=True).start() # start solar tank top temperature sensor thread
-        #threading.Thread(target=self.tank_mid_sensor_read_thread, daemon=True).start()  # start solar tank mid temperature sensor thread
-        #threading.Thread(target=self.tank_bot_sensor_read_thread, daemon=True).start()  # start solar tank bottom temperature sensor thread
-        #threading.Thread(target=self.solar_hot_water_meter_read_thread, daemon=True).start()  # start solar hot water pulse meter thread
+        threading.Thread(target=self.collector_sensor_read_thread, daemon=True).start() #start solar collector temperature sensor thread
+        threading.Thread(target=self.tank_top_sensor_read_thread, daemon=True).start() # start solar tank top temperature sensor thread
+        threading.Thread(target=self.tank_mid_sensor_read_thread, daemon=True).start()  # start solar tank mid temperature sensor thread
+        threading.Thread(target=self.tank_bot_sensor_read_thread, daemon=True).start()  # start solar tank bottom temperature sensor thread
+        threading.Thread(target=self.solar_hot_water_meter_read_thread, daemon=True).start()  # start solar hot water pulse meter thread
         #threading.Thread(target=self.solar_electricity_meter_read_thread, daemon=True).start()  # start solar electricity pulse meter thread
 
 
@@ -91,14 +91,22 @@ class BMS_Sensors:
             avSolarPressure = sum(self.lstPressureReading) / len(self.lstPressureReading)
         else:
             avSolarPressure = 0
+        #print("Pressure readings prior to reset: " + str(self.lstPressureReading))
         self.lstPressureReading = []
+        #print("Pressure reading reset") 
+        #print(self.lstPressureReading)
+        #print("Pressrure reading taken to DB: " + str(avSolarPressure))
 
         #Collector temperature
         if len(self.lstCollector) != 0:
             avSolarCollector = sum(self.lstCollector) / len(self.lstCollector)
         else:
             avSolarCollector = 0
+        print("Solar collector readings prior to reset: " + str(self.lstCollector))
         self.lstCollector = []
+        print("Solar collector reading reset")
+        print(self.lstCollector)
+        print("Solar collector reading taken to DB: " + str(avSolarCollector))
 
         #Top cylinder temperature
         if len(self.lstTankTop) != 0:
@@ -137,7 +145,11 @@ class BMS_Sensors:
                             [self.solar_flow_SQL, total_solar_flow_in_period],
                             [self.solar_electricity_SQL, total_solar_electricity_in_period]]
 
-        dictSolarData = [[ self.solar_pressure_SQL, avSolarPressure]]
+        dictSolarData = [[ self.solar_pressure_SQL, avSolarPressure], 
+                                [self.solar_collector_SQL, avSolarCollector],
+                                [self.solar_tank_top_SQL, avTankTop],
+                                [self.solar_tank_mid_SQL, avTankMid],
+                                [self.solar_tank_bot_SQL, avTankBot]]
         dictData = [dictSolarData]
 
         return dictData
@@ -189,7 +201,7 @@ class BMS_Sensors:
         R1 = 10000  # 10k ohm thermistor - worth checking the actual resistance with multi-meter and updating
         #Vref = 3.3  # The Raspberry Pi's SPI pins are 3.3V so the supply voltage should also be 3.3V not 5V
 
-        voltage = self.read_MCP3008_SPI(SPIBus, SPIChannel, MPC3008_Channel, self.Vref)
+        voltage = self.read_MCP3008_SPI(SPIBus, SPIChannel, MPC3008_Channel)
         thermistor_resistance = self.R2_resistance_OHM(R1, self.Vref, voltage)
         TempDegC = self.TenK_NTC_Thermistor(thermistor_resistance)
         return TempDegC
@@ -225,7 +237,7 @@ class BMS_Sensors:
 
         while self.continue_to_operate == True:
             self.lstPressureReading.append(self.pressure_5V_via_MCP3008(lstArgs))
-            print("Pressure readings: " + str(self.lstPressureReading))
+            #print("Pressure readings: " + str(self.lstPressureReading))
             time.sleep(1)
 
     def collector_sensor_read_thread(self):
