@@ -15,6 +15,7 @@ class BMS_Sensors:
         self.Vref = 3.3
 
         # Initialize attributes used by threads
+        self.solar_sensors_collated = False
         self.lstPressureReading = []
         self.lstCollector = []
         self.lstTankTop = []
@@ -81,7 +82,7 @@ class BMS_Sensors:
             if message == True:
                 self.continue_to_operate = False
 
-    def collate_sensors(self):
+    def collate_solar_sensors(self):
         ###############
         #Solar Sensors#
         ###############
@@ -93,7 +94,7 @@ class BMS_Sensors:
             avSolarPressure = 0
         #print("Pressure readings prior to reset: " + str(self.lstPressureReading))
         self.lstPressureReading = []
-        #print("Pressure reading reset") 
+        #print("Pressure reading reset")
         #print(self.lstPressureReading)
         #print("Pressrure reading taken to DB: " + str(avSolarPressure))
 
@@ -137,13 +138,22 @@ class BMS_Sensors:
         total_solar_electricity_in_period = sum(self.lstSolarElectricity)
         self.lstSolarElectricity = []
 
-        dictSolarData = [[self.solar_pressure_SQL, avSolarPressure],
+        self.dictSolarData = [[self.solar_pressure_SQL, avSolarPressure],
                             [self.solar_collector_SQL, avSolarCollector],
                             [self.solar_tank_top_SQL, avTankTop],
                             [self.solar_tank_mid_SQL, avTankMid],
                             [self.solar_tank_bot_SQL, avTankBot],
                             [self.solar_flow_SQL, total_solar_flow_in_period],
                             [self.solar_electricity_SQL, total_solar_electricity_in_period]]
+
+        self.solar_sensors_collated = True
+
+    def collate_sensors(self):
+        self.solar_sensors_collated = False
+        threading.Thread(target=self.collate_solar_sensors, daemon=True).start()
+
+        while not all([self.solar_sensors_collated]):
+            time.sleep(0.01)
 
         dictData = [dictSolarData]
 
@@ -290,4 +300,5 @@ class BMS_Sensors:
             if last_state == GPIO.HIGH and current_state == GPIO.LOW:
                 self.lstSolarElectricity.append(1)
                 print("Pulse from solar electricity")
+            last_state = current_state
             time.sleep(0.01)

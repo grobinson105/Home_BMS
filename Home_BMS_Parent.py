@@ -24,9 +24,10 @@ class Home_BMS:
         self.dp_0 = 0
         
         self.solar_table =  self.dictInstructions['Solar_Inputs']['Defaults']['Database_Table_Name']
-
         self.solar_flow_pulse_value =  self.dictInstructions['Solar_Inputs']['GUI_Information']['Flow_Rate']['Pulse_Value']
         self.solar_flow_SQL =  self.dictInstructions['Solar_Inputs']['GUI_Information']['Flow_Rate']['SQL_Title']
+        self.solar_electricity_pulse_value = self.dictInstructions['Solar_Inputs']['GUI_Information']['Solar_pump_electricity']['Pulse_Value']
+        self.solar_electricity_SQL = self.dictInstructions['Solar_Inputs']['GUI_Information']['Solar_pump_electricity']['SQL_Title']
         self.collector_temp_SQL =  self.dictInstructions['Solar_Inputs']['GUI_Information']['Collector_temp']['SQL_Title']
         self.tank_temp_SQL =  self.dictInstructions['Solar_Inputs']['GUI_Information']['Tank_bot_temp']['SQL_Title']
         self.collector_glycol =  self.dictInstructions['User_Inputs']['Glycol_Mix']
@@ -158,9 +159,8 @@ class Home_BMS:
                                     fltUpperCapacity - fltLowerCapacity))
         return fltInterpolatedCapacity
 
-    def calculate_heat_wh(self, glycol_mix, litres, flow_temp, return_temp, seconds_duration):
-
-        fluid_capacity = ethelyne_glycol_heat_capacity(glycol_mix)
+    def calculate_heat_wh(self, glycol, litres, flow_temp, return_temp, seconds_duration):
+        fluid_capacity = self.ethelyne_glycol_heat_capacity(glycol)
         heat_load_wh = fluid_capacity * litres * (flow_temp - return_temp) * seconds_duration * (10**3) / (60**2)
         return heat_load_wh
 
@@ -284,22 +284,39 @@ class Home_BMS:
             
             #Calculate collector flow in period
             lstSolarWaterFlowCount = next((sublist for sublist in lstSolar if sublist[0] == self.solar_flow_SQL), None)
-            print("Solar water flow pulses: ")
-            print(lstSolarWaterFlowCount)
+            #print("Solar water flow pulses: ")
+            #print(lstSolarWaterFlowCount)
             fltSolarWaterFlow = float(lstSolarWaterFlowCount[1]) * self.solar_flow_pulse_value
-            print("Solar water flow in period Litres: " + str(fltSolarWaterFlow))
+            #print("Solar water flow in period Litres: " + str(fltSolarWaterFlow))
             
             for item in lstSolar:
                 if item[0] == self.solar_flow_SQL:
                     item[1] = fltSolarWaterFlow #Update the solar data with the litres rather than pulse count
                     break
             
-            
+            #Calculate collector electricity in period
+            lstSolarElectricityCount = next((sublist for sublist in lstSolar if sublist[0] == self.solar_electricity_SQL), None)
+            #print("Solar electricity pulses: ")
+            #print(lstSolarElectricityCount)
+            fltElectricity = float(lstSolarElectricityCount[1]) * self.solar_electricity_pulse_value
+            print("Solar electricity in period Wh: " + str(fltElectricity))
+
+            for item in lstSolar:
+                if item[0] == self.solar_electricity_SQL:
+                    item[1] = fltElectricity  # Update the solar data with the litres rather than pulse count
+                    break
             
             lstSolarFields = [item[0] for item in lstSolar]
             #print("Solar fields: " + str(lstSolarFields))
             lstSolarVals = [item[1] for item in lstSolar]
             #print("Solar Vals: " + str(lstSolarVals))
+
+            #heat transferred in period
+            solar_heat_transferred = self.calculate_heat_wh(self.collector_glycol, fltSolarWaterFlow, lstSolarVals[0], lstSolarVals[4], Seconds_Elapsed)
+            print("Heat transferred in period (wh): " + str(solar_heat_transferred))
+            lstSolarFields.append(self.solar_electricity_SQL)
+            print("Solar fields: " + str(lstSolarFields))
+            lstSolarVals.append(solar_heat_transferred)
 
             lstSolarArgs = [[self.solar_table], lstSolarFields, lstSolarVals]
             self.DB_upload_data(lstSolarArgs)
@@ -339,16 +356,26 @@ class Home_BMS:
             tank_bot_temp_str = f"{tank_bot_temp:.{self.dp_2}f}"
             #print("Tank bottom temp: " + str(tank_bot_temp))
             lblTankBot.config(text=tank_bot_temp_str)
-            
-            strSolarFlowSQL = self.dictInstructions['Solar_Inputs']['GUI_Information']['Flow_Rate']['SQL_Title']
-            lstSolarFlowQry = [self.solar_table, strSolarFlowSQL]
-            Flow_Rate_lstHr = self.last_hour_query(lstSolarFlowQry)
+
+            #solar hourly flow rate for GUI
+            lstSolarFlowQry = [self.solar_table, self.solar_flow_SQL]
+            lstFlow_Rate_lstHr = self.last_hour_query(lstSolarFlowQry)
+            print("lstFlow_Rate_lstHr: " + str(lstFlow_Rate_lstHr))
+            Flow_Rate_lstHr = sum(item[1] for item in lstFlow_Rate_lstHr)
             lblFlowRate = self.dictInstructions['Solar_Inputs']['GUI_Information']['Flow_Rate']['GUI_Val']
-            solar_flow = lstSolarVals[5]
-            solar_flow_str = f"{solar_flow :.{self.dp_0}f}"
+            solar_flow_str = f"{Flow_Rate_lstHr :.{self.dp_0}f}"
             #print("Solar flow rate: " + str(solar_flow))
-            lblFlowRate.config(text=solar_flow)
-            
+            lblFlowRate.config(text=solar_flow_str)
+
+            #solar thermal capacity over previous hour
+            lstSolarThermCap = [self.solar_table, self.solar_flow_SQL]
+            lstThermal_Capacity_W = self.last_hour_query(lstSolarThermCap)
+            Thermal_Capacity_W = sum(item[1] for item in lstThermal_Capacity_W)
+            lblThermCapacity = self.dictInstructions['Solar_Inputs']['GUI_Information']['Heat_capacity']['GUI_Val']
+            Thermal_Capacity_W_str = f"{Thermal_Capacity_W :.{self.dp_0}f}"
+            #print("Solar capacity: " + str(Thermal_Capacity_W))
+            lblThermCapacity.config(text=Thermal_Capacity_W_str)
+
             now = datetime.now()
             seconds_until_next_minute = 60 - now.second - now.microsecond / 1_000_000
             print("Seconds until next sensor check: " + str(seconds_until_next_minute))
