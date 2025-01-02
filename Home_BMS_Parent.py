@@ -169,7 +169,7 @@ class Home_BMS:
         method = getattr(self, method_name)
         return method(*args, **kwargs)
     
-    def convert_SQL_date(selfself, dtDate):
+    def convert_SQL_date_with_time(selfself, dtDate):
         #need to subtract a day and run request_db_data on the previous day
         strMonth = str(dtDate.month)
         if len(strMonth) == 1:
@@ -177,9 +177,21 @@ class Home_BMS:
         strDay = str(dtDate.day)
         if len(strDay) == 1:
             strDay = '0' + strDay
-
-        strDate = str(dtDate.year) + "-" + strMonth + "-" + strDay
-        return strDate + ' 00:00:00'
+        
+        strHr = str(dtDate.hour)
+        if len(strHr) == 1:
+            strHr = '0' + strHr
+            
+        strMin = str(dtDate.minute)
+        if len(strMin) == 1:
+            strMin = '0' + strMin
+            
+        strSec = str(dtDate.second)
+        if len(strSec) == 1:
+            strSec = '0' + strSec
+        
+        strDate = str(dtDate.year) + "-" + strMonth + "-" + strDay + ' ' + strHr + ':' + strMin + ':' + strSec
+        return strDate
     
     def extract_values(self, args):
         context = zmq.Context.instance()
@@ -245,9 +257,9 @@ class Home_BMS:
     
     def last_hour_query(self, args):
         dtNow = datetime.now()
-        strNow = self.convert_SQL_date(dtNow)
+        strNow = self.convert_SQL_date_with_time(dtNow)
         dtHRearlier = dtNow - timedelta(hours=1)
-        strHRearlier = self.convert_SQL_date(dtHRearlier)
+        strHRearlier = self.convert_SQL_date_with_time(dtHRearlier)
         
         table_name = args[0]
         field_name = args[1]
@@ -258,9 +270,9 @@ class Home_BMS:
 
     def all_day_query(self, args):
         dtNow = datetime.now()
-        strNow = self.convert_SQL_date(dtNow)
+        strNow = self.convert_SQL_date_with_time(dtNow)
         dtYesterdayMidnight = datetime(dtNow.year, dtNow.month, dtNow.day)
-        strYesterdayMidnight = self.convert_SQL_date(dtYesterdayMidnight)
+        strYesterdayMidnight = self.convert_SQL_date_with_time(dtYesterdayMidnight)
 
         table_name = args[0]
         field_name = args[1]
@@ -375,7 +387,7 @@ class Home_BMS:
             lstSolarFlowQry = [self.solar_table, self.solar_flow_SQL]
             lstFlow_Rate_lstHr = self.last_hour_query(lstSolarFlowQry)
             print("lstFlow_Rate_lstHr: " + str(lstFlow_Rate_lstHr))
-            Flow_Rate_lstHr = sum(item[1] for item in lstFlow_Rate_lstHr)
+            Flow_Rate_lstHr = sum(float(item[1]) for item in lstFlow_Rate_lstHr)
             lblFlowRate = self.dictInstructions['Solar_Inputs']['GUI_Information']['Flow_Rate']['GUI_Val']
             solar_flow_str = f"{Flow_Rate_lstHr :.{self.dp_0}f}"
             #print("Solar flow rate: " + str(solar_flow))
@@ -384,7 +396,7 @@ class Home_BMS:
             #solar thermal capacity over previous hour
             lstSolarThermCap = [self.solar_table, self.solar_flow_SQL]
             lstThermal_Capacity_W = self.last_hour_query(lstSolarThermCap)
-            Thermal_Capacity_W = sum(item[1] for item in lstThermal_Capacity_W)
+            Thermal_Capacity_W = sum(float(item[1]) for item in lstThermal_Capacity_W if item[1] is not None)
             self.BMS_GUI.Solar_Gauge.add_gauge_line(Thermal_Capacity_W)
             lblThermCapacity = self.dictInstructions['Solar_Inputs']['GUI_Information']['Heat_capacity']['GUI_Val']
             Thermal_Capacity_W_str = f"{Thermal_Capacity_W :.{self.dp_0}f}"
@@ -393,8 +405,8 @@ class Home_BMS:
 
             #Heat transferred in day
             lstSolarHeatArgs = [self.solar_table, self.collector_heat_load_SQL]
-            lstSolarDayHeat = all_day_query(lstSolarHeatArgs)
-            Solar_Heat_Wh = sum(item[1] for item in lstSolarDayHeat)
+            lstSolarDayHeat = self.all_day_query(lstSolarHeatArgs)
+            Solar_Heat_Wh = sum(float(item[1]) for item in lstSolarDayHeat if item[1] is not None)
             lblSolarHeat = self.dictInstructions['Solar_Inputs']['GUI_Information']['Heat_load']['GUI_Val']
             Solar_Heat_Wh_str = f"{Solar_Heat_Wh :.{self.dp_0}f}"
             #print("Solar heat: " + str(Solar_Heat_Wh))
@@ -402,8 +414,8 @@ class Home_BMS:
 
             #Solar electricity
             lstSolarElecArgs = [self.solar_table, self.solar_electricity_SQL]
-            lstSolarDayElec = all_day_query(lstSolarElecArgs)
-            Solar_Elec_Wh = sum(item[1] for item in lstSolarDayElec)
+            lstSolarDayElec = self.all_day_query(lstSolarElecArgs)
+            Solar_Elec_Wh = sum(float(item[1]) for item in lstSolarDayElec if item[1] is not None)
             lblSolarElec = self.dictInstructions['Solar_Inputs']['GUI_Information']['Solar_pump_electricity']['GUI_Val']
             Solar_Elec_Wh_str = f"{Solar_Elec_Wh :.{self.dp_0}f}"
             #print("Solar heat: " + str(Solar_Heat_Wh))

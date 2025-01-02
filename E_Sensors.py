@@ -155,7 +155,7 @@ class BMS_Sensors:
         while not all([self.solar_sensors_collated]):
             time.sleep(0.01)
 
-        dictData = [dictSolarData]
+        dictData = [self.dictSolarData]
 
         return dictData
 
