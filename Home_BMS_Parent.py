@@ -255,7 +255,20 @@ class Home_BMS:
         lstArgs = ["extract_values", lstQuery]
         lstData = self.extract_values(lstArgs)
         return lstData
-    
+
+    def all_day_query(self, args):
+        dtNow = datetime.now()
+        strNow = self.convert_SQL_date(dtNow)
+        dtYesterdayMidnight = datetime(dtNow.year, dtNow.month, dtNow.day)
+        strYesterdayMidnight = self.convert_SQL_date(dtYesterdayMidnight)
+
+        table_name = args[0]
+        field_name = args[1]
+        lstQuery = [strYesterdayMidnight, strNow, table_name, field_name]
+        lstArgs = ["extract_values", lstQuery]
+        lstData = self.extract_values(lstArgs)
+        return lstData
+
     def sensors_client_thread(self):
         
         print("Waiting for sensor server to initialise...")
@@ -275,7 +288,7 @@ class Home_BMS:
             print("Seconds elapsed for sensor read: " + str(Seconds_Elapsed))
             
             #########################
-            # NEW DB RECORDS thread #
+            # NEW DB RECORDS #
             #########################
 
             #Solar records
@@ -324,7 +337,7 @@ class Home_BMS:
             #print("BMS DB uploaded: solar values")
 
             #####################
-            # UPDATE GUI thread #
+            # UPDATE GUI #
             #####################
 
             #Solar tab
@@ -372,10 +385,29 @@ class Home_BMS:
             lstSolarThermCap = [self.solar_table, self.solar_flow_SQL]
             lstThermal_Capacity_W = self.last_hour_query(lstSolarThermCap)
             Thermal_Capacity_W = sum(item[1] for item in lstThermal_Capacity_W)
+            self.BMS_GUI.Solar_Gauge.add_gauge_line(Thermal_Capacity_W)
             lblThermCapacity = self.dictInstructions['Solar_Inputs']['GUI_Information']['Heat_capacity']['GUI_Val']
             Thermal_Capacity_W_str = f"{Thermal_Capacity_W :.{self.dp_0}f}"
             #print("Solar capacity: " + str(Thermal_Capacity_W))
             lblThermCapacity.config(text=Thermal_Capacity_W_str)
+
+            #Heat transferred in day
+            lstSolarHeatArgs = [self.solar_table, self.collector_heat_load_SQL]
+            lstSolarDayHeat = all_day_query(lstSolarHeatArgs)
+            Solar_Heat_Wh = sum(item[1] for item in lstSolarDayHeat)
+            lblSolarHeat = self.dictInstructions['Solar_Inputs']['GUI_Information']['Heat_load']['GUI_Val']
+            Solar_Heat_Wh_str = f"{Solar_Heat_Wh :.{self.dp_0}f}"
+            #print("Solar heat: " + str(Solar_Heat_Wh))
+            lblSolarHeat.config(text=Solar_Heat_Wh_str)
+
+            #Solar electricity
+            lstSolarElecArgs = [self.solar_table, self.solar_electricity_SQL]
+            lstSolarDayElec = all_day_query(lstSolarElecArgs)
+            Solar_Elec_Wh = sum(item[1] for item in lstSolarDayElec)
+            lblSolarElec = self.dictInstructions['Solar_Inputs']['GUI_Information']['Solar_pump_electricity']['GUI_Val']
+            Solar_Elec_Wh_str = f"{Solar_Elec_Wh :.{self.dp_0}f}"
+            #print("Solar heat: " + str(Solar_Heat_Wh))
+            lblSolarElec.config(text=Solar_Elec_Wh_str)
 
             now = datetime.now()
             seconds_until_next_minute = 60 - now.second - now.microsecond / 1_000_000
