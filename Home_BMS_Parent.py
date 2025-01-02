@@ -6,7 +6,7 @@ import D_Database
 import E_Sensors
 import threading
 import time
-from datetime import datetime
+from datetime import datetime, timedelta
 import json
 
 # Function to check if a port is available
@@ -167,7 +167,19 @@ class Home_BMS:
     def call_method(self, method_name, *args, **kwargs):
         method = getattr(self, method_name)
         return method(*args, **kwargs)
+    
+    def convert_SQL_date(selfself, dtDate):
+        #need to subtract a day and run request_db_data on the previous day
+        strMonth = str(dtDate.month)
+        if len(strMonth) == 1:
+            strMonth = '0' + strMonth
+        strDay = str(dtDate.day)
+        if len(strDay) == 1:
+            strDay = '0' + strDay
 
+        strDate = str(dtDate.year) + "-" + strMonth + "-" + strDay
+        return strDate + ' 00:00:00'
+    
     def extract_values(self, args):
         context = zmq.Context.instance()
         socket = context.socket(zmq.REQ)
@@ -229,7 +241,20 @@ class Home_BMS:
             time.sleep(0.1)
         print("Sensor server is initialised")
         self.sensor_server_initialised.set()
+    
+    def last_hour_query(self, args):
+        dtNow = datetime.now()
+        strNow = self.convert_SQL_date(dtNow)
+        dtHRearlier = dtNow - timedelta(hours=1)
+        strHRearlier = self.convert_SQL_date(dtHRearlier)
         
+        table_name = args[0]
+        field_name = args[1]
+        lstQuery = [strHRearlier, strNow, table_name, field_name]
+        lstArgs = ["extract_values", lstQuery]
+        lstData = self.extract_values(lstArgs)
+        return lstData
+    
     def sensors_client_thread(self):
         
         print("Waiting for sensor server to initialise...")
@@ -252,23 +277,22 @@ class Home_BMS:
             # NEW DB RECORDS thread #
             #########################
 
-            
-
             #Solar records
             lstData = lstAll[1]
             lstSolar = lstData[0] # solar data is the first item in lstData
             print("Solar data received: " + str(lstSolar))
             
-            #Calculate solar thermal collected in period
-            #lstSolarWaterFlowCount = next((sublist for sublist in lstSolar if sublist[0] == self.solar_flow_SQL), None)
-            #fltSolarWaterFlow = float(lstSolarWaterFlowCount[1]) * self.solar_flow_pulse_value
-            #for item in lstSolar:
-            #    if item[0] == self.solar_flow_SQL:
-            #        item[1] = fltSolarWaterFlow #Update the solar data with the litres rather than pulse count
-            #        break
-
-            #lstCollectorTemp = next((sublist for sublist in lstSolar if sublist[0] == self.collector_temp_SQL), None)
-            #fltCollector = float(lstCollectorTemp[1])
+            #Calculate collector flow in period
+            lstSolarWaterFlowCount = next((sublist for sublist in lstSolar if sublist[0] == self.solar_flow_SQL), None)
+            print("Solar water flow pulses: ")
+            print(lstSolarWaterFlowCount)
+            fltSolarWaterFlow = float(lstSolarWaterFlowCount[1]) * self.solar_flow_pulse_value
+            print("Solar water flow in period Litres: " + str(fltSolarWaterFlow))
+            
+            for item in lstSolar:
+                if item[0] == self.solar_flow_SQL:
+                    item[1] = fltSolarWaterFlow #Update the solar data with the litres rather than pulse count
+                    break
 
             lstSolarFields = [item[0] for item in lstSolar]
             print("Solar fields: " + str(lstSolarFields))
@@ -313,6 +337,15 @@ class Home_BMS:
             tank_bot_temp_str = f"{tank_bot_temp:.{self.dp_2}f}"
             #print("Tank bottom temp: " + str(tank_bot_temp))
             lblTankBot.config(text=tank_bot_temp_str)
+            
+            strSolarFlowSQL = self.dictInstructions['Solar_Inputs']['GUI_Information']['Flow_Rate']['SQL_Title']
+            lstSolarFlowQry = [self.solar_table, strSolarFlowSQL]
+            Flow_Rate_lstHr = self.last_hour_query(lstSolarFlowQry)
+            lblFlowRate = self.dictInstructions['Solar_Inputs']['GUI_Information']['Flow_Rate']['GUI_Val']
+            solar_flow = lstSolarVals[5]
+            solar_flow_str = f"{solar_flow :.{self.dp_0}f}"
+            #print("Solar flow rate: " + str(solar_flow))
+            lblFlowRate.config(text=solar_flow)
             
             now = datetime.now()
             seconds_until_next_minute = 60 - now.second - now.microsecond / 1_000_000

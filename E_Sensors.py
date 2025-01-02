@@ -102,11 +102,11 @@ class BMS_Sensors:
             avSolarCollector = sum(self.lstCollector) / len(self.lstCollector)
         else:
             avSolarCollector = 0
-        print("Solar collector readings prior to reset: " + str(self.lstCollector))
+        #print("Solar collector readings prior to reset: " + str(self.lstCollector))
         self.lstCollector = []
-        print("Solar collector reading reset")
-        print(self.lstCollector)
-        print("Solar collector reading taken to DB: " + str(avSolarCollector))
+        #print("Solar collector reading reset")
+        #print(self.lstCollector)
+        #print("Solar collector reading taken to DB: " + str(avSolarCollector))
 
         #Top cylinder temperature
         if len(self.lstTankTop) != 0:
@@ -149,7 +149,8 @@ class BMS_Sensors:
                                 [self.solar_collector_SQL, avSolarCollector],
                                 [self.solar_tank_top_SQL, avTankTop],
                                 [self.solar_tank_mid_SQL, avTankMid],
-                                [self.solar_tank_bot_SQL, avTankBot]]
+                                [self.solar_tank_bot_SQL, avTankBot],
+                                [self.solar_flow_SQL, total_solar_flow_in_period]]
         dictData = [dictSolarData]
 
         return dictData
@@ -280,7 +281,7 @@ class BMS_Sensors:
         while self.continue_to_operate == True:
             current_state = GPIO.input(GPIO_Pin)
             if last_state == GPIO.HIGH and current_state == GPIO.LOW:
-                self.lstSolarWater.append([1])
+                self.lstSolarWater.append(1)
                 print("Pulse from solar hot water")
             last_state = current_state
             time.sleep(0.01)
@@ -293,6 +294,6 @@ class BMS_Sensors:
         while self.continue_to_operate == True:
             current_state = GPIO.input(GPIO_Pin)
             if last_state == GPIO.HIGH and current_state == GPIO.LOW:
-                self.lstSolarElectricity.append([1])
+                self.lstSolarElectricity.append(1)
                 print("Pulse from solar electricity")
             time.sleep(0.01)
