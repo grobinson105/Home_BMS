@@ -37,6 +37,7 @@ class BMS_Sensors:
         
 
     def restart_threads(self):
+        #Solar Threads
         threading.Thread(target=self.pressure_sensor_read_thread, daemon=True).start() #start solar pressure sensor thread
         threading.Thread(target=self.collector_sensor_read_thread, daemon=True).start() #start solar collector temperature sensor thread
         threading.Thread(target=self.tank_top_sensor_read_thread, daemon=True).start() # start solar tank top temperature sensor thread
@@ -44,7 +45,9 @@ class BMS_Sensors:
         threading.Thread(target=self.tank_bot_sensor_read_thread, daemon=True).start()  # start solar tank bottom temperature sensor thread
         threading.Thread(target=self.solar_hot_water_meter_read_thread, daemon=True).start()  # start solar hot water pulse meter thread
         threading.Thread(target=self.solar_electricity_meter_read_thread, daemon=True).start()  # start solar electricity pulse meter thread
-
+        
+        #Heat Pump Threads
+        
 
     def create(self, port):
         self.last_request_time = None
@@ -81,7 +84,7 @@ class BMS_Sensors:
 
             if message == True:
                 self.continue_to_operate = False
-
+                
     def collate_solar_sensors(self):
         ###############
         #Solar Sensors#
@@ -302,3 +305,11 @@ class BMS_Sensors:
                 print("Pulse from solar electricity")
             last_state = current_state
             time.sleep(0.01)
+
+    def HP_outlet_read_thread(self):
+        self.lstHPOutlet = []
+        lstArgs = self.dictInstructions['HP_Inputs']['GUI_Information']['Outlet_Temperature']['Interface_args']
+
+        while self.continue_to_operate == True:
+            self.lstHPOutlet.append(self.temp_from_MCP3008_10K_NTC_Thermistor(lstArgs))
+            time.sleep(1)
