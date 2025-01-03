@@ -421,6 +421,9 @@ class Home_BMS:
             #print("Solar heat: " + str(Solar_Heat_Wh))
             lblSolarElec.config(text=Solar_Elec_Wh_str)
 
+            #Update solar graph
+            self.BMS_GUI.current_solar()
+            
             now = datetime.now()
             seconds_until_next_minute = 60 - now.second - now.microsecond / 1_000_000
             print("Seconds until next sensor check: " + str(seconds_until_next_minute))
