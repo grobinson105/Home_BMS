@@ -160,9 +160,9 @@ class Home_BMS:
                                     fltUpperCapacity - fltLowerCapacity))
         return fltInterpolatedCapacity
 
-    def calculate_heat_wh(self, glycol, litres, flow_temp, return_temp, seconds_duration):
+    def calculate_heat_wh(self, glycol, litres, flow_temp, return_temp):
         fluid_capacity = self.ethelyne_glycol_heat_capacity(glycol)
-        heat_load_wh = fluid_capacity * litres * (flow_temp - return_temp) * seconds_duration * (10**3) / (60**2)
+        heat_load_wh = fluid_capacity * litres * (flow_temp - return_temp) * (10**3) / (60**2)
         return heat_load_wh
 
     def call_method(self, method_name, *args, **kwargs):
@@ -338,7 +338,7 @@ class Home_BMS:
             #print("Solar Vals: " + str(lstSolarVals))
 
             #heat transferred in period
-            solar_heat_transferred = self.calculate_heat_wh(self.collector_glycol, fltSolarWaterFlow, lstSolarVals[0], lstSolarVals[4], Seconds_Elapsed)
+            solar_heat_transferred = self.calculate_heat_wh(self.collector_glycol, fltSolarWaterFlow, lstSolarVals[1], lstSolarVals[4])
             print("Heat transferred in period (wh): " + str(solar_heat_transferred))
             lstSolarFields.append(self.collector_heat_load_SQL)
             print("Solar fields: " + str(lstSolarFields))
@@ -394,7 +394,7 @@ class Home_BMS:
             lblFlowRate.config(text=solar_flow_str)
 
             #solar thermal capacity over previous hour
-            lstSolarThermCap = [self.solar_table, self.solar_flow_SQL]
+            lstSolarThermCap = [self.solar_table, self.collector_heat_load_SQL]
             lstThermal_Capacity_W = self.last_hour_query(lstSolarThermCap)
             Thermal_Capacity_W = sum(float(item[1]) for item in lstThermal_Capacity_W if item[1] is not None)
             self.BMS_GUI.Solar_Gauge.add_gauge_line(Thermal_Capacity_W)
