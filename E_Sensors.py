@@ -16,6 +16,7 @@ class BMS_Sensors:
 
         # Initialize attributes used by threads
         self.solar_sensors_collated = False
+        self.HP_sensors_collated = False
         self.lstPressureReading = []
         self.lstCollector = []
         self.lstTankTop = []
@@ -32,6 +33,12 @@ class BMS_Sensors:
         self.solar_flow_SQL = self.dictInstructions['Solar_Inputs']['GUI_Information']['Flow_Rate']['SQL_Title']
         self.solar_electricity_SQL = self.dictInstructions['Solar_Inputs']['GUI_Information']['Solar_pump_electricity']['SQL_Title']
 
+        self.HP_outlet_SQL = self.dictInstructions['HP_Inputs']['GUI_Information']['Outlet_Temperature']['SQL_Title']
+        self.HP_inlet_SQL = self.dictInstructions['HP_Inputs']['GUI_Information']['Inlet_Temperature']['SQL_Title']
+        self.HP_flow_SQL = self.dictInstructions['HP_Inputs']['GUI_Information']['Flow_Rate']['SQL_Title']
+        self.HP_electricity_SQL = self.dictInstructions['HP_Inputs']['GUI_Information']['External_Unit_Elec_Wh']['SQL_Title']
+        self.HP_int_electricity_SQL = self.dictInstructions['HP_Inputs']['GUI_Information']['Internal_Unit_Elec_Wh']['SQL_Title']
+
         self.restart_threads()
         threading.Thread(target=self.create, args=(port,), daemon=True).start()
         
@@ -47,7 +54,11 @@ class BMS_Sensors:
         threading.Thread(target=self.solar_electricity_meter_read_thread, daemon=True).start()  # start solar electricity pulse meter thread
         
         #Heat Pump Threads
-        
+        threading.Thread(target=self.HP_outlet_read_thread(), daemon=True).start()
+        threading.Thread(target=self.HP_inlet_read_thread(), daemon=True).start()
+        threading.Thread(target=self.HP_water_meter_read_thread(), daemon=True).start()
+        threading.Thread(target=self.HP_elec_meter_read_thread(), daemon=True).start()
+        threading.Thread(target=self.HP_internal_elec_meter_read_thread(), daemon=True).start()
 
     def create(self, port):
         self.last_request_time = None
@@ -85,6 +96,39 @@ class BMS_Sensors:
             if message == True:
                 self.continue_to_operate = False
                 
+    def collate_HP_sensors(self):
+        if len(self.lstHPOutlet) != 0:
+            avHPOutletTemp = sum(self.lstHPOutlet) / len(self.lstHPOutlet)
+        else:
+            avHPOutletTemp = 0
+        self.lstHPOutlet = []
+
+        if len(self.lstHPInlet) != 0:
+            avHPInletTemp = sum(self.lstHPInlet) / len(self.lstHPInlet)
+        else:
+            avHPInletTemp = 0
+        self.lstHPInlet = []
+
+        # HP hot water flow meter
+        total_HP_flow_in_period = sum(self.lstHPflow)
+        self.lstHPflow = []
+
+        # HP electricity flow meter
+        total_HP_elec_in_period = sum(self.lstHPelectricity)
+        self.lstHPelectricity = []
+
+        # HP electricity internalflow meter
+        total_HP_elec_int_in_period = sum(self.lstHP_int_electricity)
+        self.lstHP_int_electricity = []
+
+        self.dictHPData = [[self.HP_outlet_SQL, avHPOutletTemp],
+                              [self.HP_inlet_SQL, avHPInletTemp],
+                              [self.HP_flow_SQL, total_HP_flow_in_period],
+                              [self.HP_electricity_SQL, total_HP_elec_in_period],
+                              [self.HP_int_electricity_SQL, total_HP_elec_int_in_period]]
+
+        self.HP_sensors_collated = True
+
     def collate_solar_sensors(self):
         ###############
         #Solar Sensors#
@@ -153,12 +197,15 @@ class BMS_Sensors:
 
     def collate_sensors(self):
         self.solar_sensors_collated = False
-        threading.Thread(target=self.collate_solar_sensors, daemon=True).start()
+        self.HP_sensors_collated = False
 
-        while not all([self.solar_sensors_collated]):
+        threading.Thread(target=self.collate_solar_sensors, daemon=True).start()
+        threading.Thread(target=self.collate_HP_sensors, daemon=True).start()
+
+        while not all([self.solar_sensors_collated, self.HP_sensors_collated]):
             time.sleep(0.01)
 
-        dictData = [self.dictSolarData]
+        dictData = [self.dictSolarData, self.dictHPData]
 
         return dictData
 
@@ -313,3 +360,50 @@ class BMS_Sensors:
         while self.continue_to_operate == True:
             self.lstHPOutlet.append(self.temp_from_MCP3008_10K_NTC_Thermistor(lstArgs))
             time.sleep(1)
+
+    def HP_inlet_read_thread(self):
+        self.lstHPInlet = []
+        lstArgs = self.dictInstructions['HP_Inputs']['GUI_Information']['Inlet_Temperature']['Interface_args']
+
+        while self.continue_to_operate == True:
+            self.lstHPInlet.append(self.temp_from_MCP3008_10K_NTC_Thermistor(lstArgs))
+            time.sleep(1)
+
+    def HP_water_meter_read_thread(self):
+        self.lstHPflow = []
+        GPIO_Pin = self.dictInstructions['HP_Inputs']['GUI_Information']['Flow_Rate']['Pulse_GPIO']
+        last_state = GPIO.input(GPIO_Pin)
+
+        while self.continue_to_operate == True:
+            current_state = GPIO.input(GPIO_Pin)
+            if last_state == GPIO.HIGH and current_state == GPIO.LOW:
+                self.lstHPflow.append(1)
+                print("Pulse from HP hot water meter")
+            last_state = current_state
+            time.sleep(0.01)
+
+    def HP_elec_meter_read_thread(self):
+        self.lstHPelectricity = []
+        GPIO_Pin = self.dictInstructions['HP_Inputs']['GUI_Information']['External_Unit_Elec_Wh']['Pulse_GPIO']
+        last_state = GPIO.input(GPIO_Pin)
+
+        while self.continue_to_operate == True:
+            current_state = GPIO.input(GPIO_Pin)
+            if last_state == GPIO.HIGH and current_state == GPIO.LOW:
+                self.lstHPelectricity.append(1)
+                print("Pulse from HP electricity meter")
+            last_state = current_state
+            time.sleep(0.01)
+
+    def HP_internal_elec_meter_read_thread(self):
+        self.lstHP_int_electricity = []
+        GPIO_Pin = self.dictInstructions['HP_Inputs']['GUI_Information']['Internal_Unit_Elec_Wh']['Pulse_GPIO']
+        last_state = GPIO.input(GPIO_Pin)
+
+        while self.continue_to_operate == True:
+            current_state = GPIO.input(GPIO_Pin)
+            if last_state == GPIO.HIGH and current_state == GPIO.LOW:
+                self.lstHP_int_electricity.append(1)
+                print("Pulse from HP internal electricity meter")
+            last_state = current_state
+            time.sleep(0.01)

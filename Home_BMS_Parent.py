@@ -303,8 +303,10 @@ class Home_BMS:
             # NEW DB RECORDS #
             #########################
 
-            #Solar records
             lstData = lstAll[1]
+
+            #######################################################################################################
+            #Solar records
             lstSolar = lstData[0] # solar data is the first item in lstData
             print("Solar data received: " + str(lstSolar))
             
@@ -348,10 +350,17 @@ class Home_BMS:
             self.DB_upload_data(lstSolarArgs)
             #print("BMS DB uploaded: solar values")
 
+            #####################################################################################################
+            #HP database upload
+            lstHP = lstData[1] # HP data is the first item in lstData
+
+            
+
             #####################
             # UPDATE GUI #
             #####################
 
+            #####################################################################################################
             #Solar tab
             lblPressure = self.dictInstructions['Solar_Inputs']['GUI_Information']['SYS_Pressure']['GUI_Val']
             solar_pressure = lstSolarVals[0]
@@ -423,7 +432,7 @@ class Home_BMS:
 
             #Update solar graph
             self.BMS_GUI.current_solar()
-            
+
             now = datetime.now()
             seconds_until_next_minute = 60 - now.second - now.microsecond / 1_000_000
             print("Seconds until next sensor check: " + str(seconds_until_next_minute))
