@@ -571,6 +571,28 @@ class Home_BMS:
             # print("HP CoP last hour: " + str(fltCOPLastHR))
             lblHPCoP.config(text=HP_CoP_str)
 
+            # COP all day for gauge
+            lstHPHeatDay = self.all_day_query(lstHPHeatArgs)
+            fltHPHeatDay = sum(float(item[1]) for item in lstHPHeatDay if item[1] is not None)
+            lstHPExtElecDay = self.all_day_query(lstExtElecArgs)
+            fltHPExtElecDay = sum(float(item[1]) for item in lstHPExtElecDay if item[1] is not None)
+            lstHPIntElecDay = self.all_day_query(lstIntElecArgs)
+            fltHPIntElecDay = sum(float(item[1]) for item in lstHPIntElecDay if item[1] is not None)
+
+            if boolIncludeInt:
+                if fltHPExtElecDay + fltHPIntElecDay != 0:
+                    fltCOPDay = fltHPHeatDay / (fltHPExtElecDay + fltHPIntElecDay)
+                else:
+                    fltCOPDay = 0
+
+            else:
+                if fltHPExtElecDay != 0:
+                    fltCOPDay = fltHPHeatDay / fltHPExtElecDay
+                else:
+                    fltCOPDay = 0
+
+            self.BMS_GUI.HP_Gauge.add_gauge_line(fltCOPDay)
+
             #HP Pressure
             lblHPPressure = self.dictInstructions['HP_Inputs']['GUI_Information']['HP_Pressure']['GUI_Val']
             HP_Pressure = lstHPVals[5]
