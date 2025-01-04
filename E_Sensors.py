@@ -55,11 +55,12 @@ class BMS_Sensors:
         threading.Thread(target=self.solar_electricity_meter_read_thread, daemon=True).start()  # start solar electricity pulse meter thread
         
         #Heat Pump Threads
-        threading.Thread(target=self.HP_outlet_read_thread(), daemon=True).start()
-        threading.Thread(target=self.HP_inlet_read_thread(), daemon=True).start()
-        threading.Thread(target=self.HP_water_meter_read_thread(), daemon=True).start()
-        threading.Thread(target=self.HP_elec_meter_read_thread(), daemon=True).start()
-        threading.Thread(target=self.HP_internal_elec_meter_read_thread(), daemon=True).start()
+        threading.Thread(target=self.HP_outlet_read_thread, daemon=True).start()
+        threading.Thread(target=self.HP_inlet_read_thread, daemon=True).start()
+        threading.Thread(target=self.HP_water_meter_read_thread, daemon=True).start()
+        threading.Thread(target=self.HP_elec_meter_read_thread, daemon=True).start()
+        threading.Thread(target=self.HP_internal_elec_meter_read_thread, daemon=True).start()
+        threading.Thread(target=self.HP_pressure_sensor_read_thread, daemon=True).start()
 
     def create(self, port):
         self.last_request_time = None

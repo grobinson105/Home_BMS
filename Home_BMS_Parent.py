@@ -567,7 +567,7 @@ class Home_BMS:
                     fltCOPLastHR = 0
 
             lblHPCoP = self.dictInstructions['HP_Inputs']['GUI_Information']['HP_CoP']['GUI_Val']
-            HP_CoP_str = f"{fltCOPLastHR :.{self.dp_0}f}"
+            HP_CoP_str = f"{fltCOPLastHR :.{self.dp_2}f}"
             # print("HP CoP last hour: " + str(fltCOPLastHR))
             lblHPCoP.config(text=HP_CoP_str)
 
