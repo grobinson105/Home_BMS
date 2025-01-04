@@ -328,6 +328,16 @@ class build_GUI:
         strDateCurrSQL = self.convert_SQL_date(dtDateNext)
         self.run_PV(strDatePrevSQL, strDateCurrSQL)
 
+    def current_BAT(self):
+        #print(strDate)
+        strDate = self.BAT_Graph.return_title()
+        dtDate = dt.datetime.strptime(strDate, "%d/%m/%Y")
+        dtDateNext = dtDate + dt.timedelta(days=1)
+
+        strDatePrevSQL = self.convert_SQL_date(dtDate)
+        strDateCurrSQL = self.convert_SQL_date(dtDateNext)
+        self.run_BAT(strDatePrevSQL, strDateCurrSQL)
+
     def run_solar(self, strDatePrevSQL, strDateCurrSQL):
         #Collector Temperature
         Collect_Field = self.dictInstructions['Solar_Inputs']['GUI_Information']['Collector_temp']['SQL_Title']

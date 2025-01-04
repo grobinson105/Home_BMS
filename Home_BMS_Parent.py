@@ -706,14 +706,16 @@ class Home_BMS:
             totalBAT = BATdisChargeElec_Wh + BATChargeElec_Wh
             if totalBAT != 0:
                 if BATdisChargeElec_Wh > BATChargeElec_Wh:
-                    BAT_Gauge_Val = -BATdisChargeElec_Wh / totalBAT
+                    BAT_Gauge_Val = -BATdisChargeElec_Wh / totalBAT * 100
                 else:
-                    BAT_Gauge_Val = BATChargeElec_Wh / totalBAT
+                    BAT_Gauge_Val = BATChargeElec_Wh / totalBAT * 100
             else:
                 BAT_Gauge_Val = 0
 
-            self.BMS_GUI.BAT_Gauge.add_gauge_line(totalBAT)
-
+            self.BMS_GUI.BAT_Gauge.add_gauge_line(BAT_Gauge_Val)
+            
+            self.BMS_GUI.current_BAT()
+            
             #####################################################################################################
             # CONCLUDE
 
