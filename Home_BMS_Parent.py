@@ -55,6 +55,12 @@ class Home_BMS:
         self.BAT_discharge_SQL = self.dictInstructions['BAT_Inputs']['GUI_Information']['Discharge_Supply']['SQL_Title']
         self.BAT_discharge_pulse_value = self.dictInstructions['BAT_Inputs']['GUI_Information']['Discharge_Supply']['Pulse_Value']
 
+        self.Zone_table = self.dictInstructions['ZONE_Inputs']['Defaults']['Database_Table_Name']
+        self.Zone1_SQL = self.dictInstructions['ZONE_Inputs']['GUI_Information']['Zone_1']['SQL_Title']
+        self.Zone2_SQL = self.dictInstructions['ZONE_Inputs']['GUI_Information']['Zone_2']['SQL_Title']
+        self.Zone3_SQL = self.dictInstructions['ZONE_Inputs']['GUI_Information']['Zone_3']['SQL_Title']
+        self.Zone4_SQL = self.dictInstructions['ZONE_Inputs']['GUI_Information']['Zone_4']['SQL_Title']
+
         self.allocate_ports()
 
         if self.ports_boolSuccess == True:
@@ -466,6 +472,18 @@ class Home_BMS:
             self.DB_upload_data(lstBATArgs)
             print("BMS DB uploaded: BAT values")
 
+            #####################################################################################################
+            # ZONES database upload
+            lstZone = lstData[4]  # BAT data is the fourth item in lstData
+
+            lstZoneFields = [item[0] for item in lstZone]
+            lstZoneVals = [item[1] for item in lstZone]
+
+            # Upload Zone data to database
+            lstZoneArgs = [[self.Zone_table], lstZoneFields, lstZoneVals]
+            self.DB_upload_data(lstZoneArgs)
+            print("BMS DB uploaded: Zone values")
+
             #####################
             # UPDATE GUI #
             #####################
@@ -715,7 +733,44 @@ class Home_BMS:
             self.BMS_GUI.BAT_Gauge.add_gauge_line(BAT_Gauge_Val)
             
             self.BMS_GUI.current_BAT()
-            
+
+            #####################################################################################################
+            # ZONES
+
+            #Zone 1
+            lblZone1 = self.dictInstructions['ZONE_Inputs']['GUI_Information']['Zone_1']['GUI_Val']
+            Zone1On = lstZoneVals[0]
+            if Zone1On >= 0.5:
+                lblZone1.config(text="ON")
+            else:
+                lblZone1.config(text="OFF")
+
+            # Zone 2
+            lblZone2 = self.dictInstructions['ZONE_Inputs']['GUI_Information']['Zone_2']['GUI_Val']
+            Zone2On = lstZoneVals[1]
+            if Zone2On >= 0.5:
+                lblZone2.config(text="ON")
+            else:
+                lblZone2.config(text="OFF")
+
+            # Zone 3
+            lblZone3 = self.dictInstructions['ZONE_Inputs']['GUI_Information']['Zone_3']['GUI_Val']
+            Zone3On = lstZoneVals[2]
+            if Zone3On >= 0.5:
+                lblZone3.config(text="ON")
+            else:
+                lblZone3.config(text="OFF")
+
+            # Zone 4
+            lblZone4 = self.dictInstructions['ZONE_Inputs']['GUI_Information']['Zone_4']['GUI_Val']
+            Zone4On = lstZoneVals[3]
+            if Zone4On >= 0.5:
+                lblZone4.config(text="ON")
+            else:
+                lblZone4.config(text="OFF")
+
+            self.BMS_GUI.current_ZONE()
+
             #####################################################################################################
             # CONCLUDE
 
