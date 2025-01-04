@@ -38,6 +38,7 @@ class BMS_Sensors:
         self.HP_flow_SQL = self.dictInstructions['HP_Inputs']['GUI_Information']['Flow_Rate']['SQL_Title']
         self.HP_electricity_SQL = self.dictInstructions['HP_Inputs']['GUI_Information']['External_Unit_Elec_Wh']['SQL_Title']
         self.HP_int_electricity_SQL = self.dictInstructions['HP_Inputs']['GUI_Information']['Internal_Unit_Elec_Wh']['SQL_Title']
+        self.HP_pressure_SQL = self.dictInstructions['HP_Inputs']['GUI_Information']['HP_Pressure']['SQL_Title']
 
         self.restart_threads()
         threading.Thread(target=self.create, args=(port,), daemon=True).start()
@@ -121,11 +122,19 @@ class BMS_Sensors:
         total_HP_elec_int_in_period = sum(self.lstHP_int_electricity)
         self.lstHP_int_electricity = []
 
+        #HP pressure sensor
+        if len(self.lstHPPressureReading) != 0:
+            avHPPressure = sum(self.lstHPPressureReading) / len(self.lstHPPressureReading)
+        else:
+            avHPPressure = 0
+        self.lstHPPressureReading = []
+
         self.dictHPData = [[self.HP_outlet_SQL, avHPOutletTemp],
                               [self.HP_inlet_SQL, avHPInletTemp],
                               [self.HP_flow_SQL, total_HP_flow_in_period],
                               [self.HP_electricity_SQL, total_HP_elec_in_period],
-                              [self.HP_int_electricity_SQL, total_HP_elec_int_in_period]]
+                              [self.HP_int_electricity_SQL, total_HP_elec_int_in_period],
+                            [self.HP_pressure_SQL, avHPPressure]]
 
         self.HP_sensors_collated = True
 
@@ -407,3 +416,12 @@ class BMS_Sensors:
                 print("Pulse from HP internal electricity meter")
             last_state = current_state
             time.sleep(0.01)
+
+    def HP_pressure_sensor_read_thread(self):
+        self.lstHPPressureReading = []
+        lstArgs = self.dictInstructions['HP_Inputs']['GUI_Information']['HP_Pressure']['Interface_args']
+
+        while self.continue_to_operate == True:
+            self.lstHPPressureReading.append(self.pressure_5V_via_MCP3008(lstArgs))
+            #print("HP Pressure readings: " + str(self.lstHPPressureReading))
+            time.sleep(1)

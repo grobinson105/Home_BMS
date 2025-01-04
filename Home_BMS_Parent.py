@@ -33,6 +33,18 @@ class Home_BMS:
         self.collector_glycol =  self.dictInstructions['User_Inputs']['Glycol_Mix']
         self.collector_heat_load_SQL =  self.dictInstructions['Solar_Inputs']['GUI_Information']['Heat_load']['SQL_Title']
 
+        self.HP_table = self.dictInstructions['HP_Inputs']['Defaults']['Database_Table_Name']
+        self.HP_glycol = self.dictInstructions['User_Inputs']['HP_Glycol_Mix']
+        self.HP_flow_pulse_value = self.dictInstructions['HP_Inputs']['GUI_Information']['Flow_Rate']['Pulse_Value']
+        self.HP_elec_pulse_value = self.dictInstructions['HP_Inputs']['GUI_Information']['External_Unit_Elec_Wh']['Pulse_Value']
+        self.HP_int_elec_pulse_value = self.dictInstructions['HP_Inputs']['GUI_Information']['Internal_Unit_Elec_Wh']['Pulse_Value']
+        self.HP_outlet_SQL = self.dictInstructions['HP_Inputs']['GUI_Information']['Outlet_Temperature']['SQL_Title']
+        self.HP_inlet_SQL = self.dictInstructions['HP_Inputs']['GUI_Information']['Inlet_Temperature']['SQL_Title']
+        self.HP_flow_SQL = self.dictInstructions['HP_Inputs']['GUI_Information']['Flow_Rate']['SQL_Title']
+        self.HP_electricity_SQL = self.dictInstructions['HP_Inputs']['GUI_Information']['External_Unit_Elec_Wh']['SQL_Title']
+        self.HP_int_electricity_SQL = self.dictInstructions['HP_Inputs']['GUI_Information']['Internal_Unit_Elec_Wh']['SQL_Title']
+        self.HP_heat_load_SQL = self.dictInstructions['HP_Inputs']['GUI_Information']['Heat_load']['SQL_Title']
+
         self.allocate_ports()
 
         if self.ports_boolSuccess == True:
@@ -327,7 +339,7 @@ class Home_BMS:
             #print("Solar electricity pulses: ")
             #print(lstSolarElectricityCount)
             fltElectricity = float(lstSolarElectricityCount[1]) * self.solar_electricity_pulse_value
-            print("Solar electricity in period Wh: " + str(fltElectricity))
+            #print("Solar electricity in period Wh: " + str(fltElectricity))
 
             for item in lstSolar:
                 if item[0] == self.solar_electricity_SQL:
@@ -341,20 +353,57 @@ class Home_BMS:
 
             #heat transferred in period
             solar_heat_transferred = self.calculate_heat_wh(self.collector_glycol, fltSolarWaterFlow, lstSolarVals[1], lstSolarVals[4])
-            print("Heat transferred in period (wh): " + str(solar_heat_transferred))
             lstSolarFields.append(self.collector_heat_load_SQL)
-            print("Solar fields: " + str(lstSolarFields))
             lstSolarVals.append(solar_heat_transferred)
 
+            #Upload solar data to database
             lstSolarArgs = [[self.solar_table], lstSolarFields, lstSolarVals]
             self.DB_upload_data(lstSolarArgs)
-            #print("BMS DB uploaded: solar values")
+            print("BMS DB uploaded: solar values")
 
             #####################################################################################################
             #HP database upload
             lstHP = lstData[1] # HP data is the first item in lstData
 
-            
+            # Calculate HP flow in period
+            lstHPWaterFlowCount = next((sublist for sublist in lstHP if sublist[0] == self.HP_flow_SQL), None)
+            fltHPWaterFlow = float(lstHPWaterFlowCount[1]) * self.HP_flow_pulse_value
+
+            for item in lstHP:
+                if item[0] == self.HP_flow_SQL:
+                    item[1] = fltHPWaterFlow  # Update the HP flow data with the litres rather than pulse count
+                    break
+
+            # Calculate HP electricity in period
+            lstHPElecCount = next((sublist for sublist in lstHP if sublist[0] == self.HP_electricity_SQL), None)
+            fltHPElec = float(lstHPElecCount[1]) * self.HP_elec_pulse_value
+
+            for item in lstHP:
+                if item[0] == self.HP_electricity_SQL:
+                    item[1] = fltHPElec  # Update the HP elec data with the Wh rather than pulse count
+                    break
+
+            # Calculate HP internal electricity in period
+            lstHPIntElecCount = next((sublist for sublist in lstHP if sublist[0] == self.HP_int_electricity_SQL), None)
+            fltHPIntElec = float(lstHPIntElecCount[1]) * self.HP_elec_pulse_value
+
+            for item in lstHP:
+                if item[0] == self.HP_int_electricity_SQL:
+                    item[1] = fltHPIntElec  # Update the HP elec data with the Wh rather than pulse count
+                    break
+
+            lstHPFields = [item[0] for item in lstHP]
+            lstHPVals = [item[1] for item in lstHP]
+
+            # heat transferred in period
+            HP_heat_transferred = self.calculate_heat_wh(self.HP_glycol, fltHPWaterFlow, lstHPVals[0], lstHPVals[1])
+            lstHPFields.append(self.HP_heat_load_SQL)
+            lstHPVals.append(HP_heat_transferred)
+
+            #Upload HP data to database
+            lstHPArgs = [[self.HP_table], lstHPFields, lstHPVals]
+            self.DB_upload_data(lstHPArgs)
+            print("BMS DB uploaded: HP values")
 
             #####################
             # UPDATE GUI #
@@ -395,8 +444,8 @@ class Home_BMS:
             #solar hourly flow rate for GUI
             lstSolarFlowQry = [self.solar_table, self.solar_flow_SQL]
             lstFlow_Rate_lstHr = self.last_hour_query(lstSolarFlowQry)
-            print("lstFlow_Rate_lstHr: " + str(lstFlow_Rate_lstHr))
-            Flow_Rate_lstHr = sum(float(item[1]) for item in lstFlow_Rate_lstHr)
+            #print("lstFlow_Rate_lstHr: " + str(lstFlow_Rate_lstHr))
+            Flow_Rate_lstHr = sum(float(item[1]) for item in lstFlow_Rate_lstHr if item[1] is not None)
             lblFlowRate = self.dictInstructions['Solar_Inputs']['GUI_Information']['Flow_Rate']['GUI_Val']
             solar_flow_str = f"{Flow_Rate_lstHr :.{self.dp_0}f}"
             #print("Solar flow rate: " + str(solar_flow))
@@ -432,6 +481,104 @@ class Home_BMS:
 
             #Update solar graph
             self.BMS_GUI.current_solar()
+
+            #####################################################################################################
+            # HP tab
+            lblHPOutlet = self.dictInstructions['HP_Inputs']['GUI_Information']['Outlet_Temperature']['GUI_Val']
+            HP_outlet_temp = lstHPVals[0]
+            HP_outlet_temp_str = f"{HP_outlet_temp:.{self.dp_2}f}"
+            # print("HP Outlet temp: " + str(HP_outlet_temp))
+            lblHPOutlet.config(text=HP_outlet_temp_str)
+
+            lblHPInlet = self.dictInstructions['HP_Inputs']['GUI_Information']['Inlet_Temperature']['GUI_Val']
+            HP_inlet_temp = lstHPVals[1]
+            HP_inlet_temp_str = f"{HP_inlet_temp:.{self.dp_2}f}"
+            # print("HP Inlet temp: " + str(HP_outlet_temp))
+            lblHPInlet.config(text=HP_inlet_temp_str)
+
+            # HP thermal capacity over previous hour
+            lstHPThermCap = [self.HP_table, self.HP_heat_load_SQL]
+            lstHPThermal_Capacity_W = self.last_hour_query(lstHPThermCap)
+            HP_Thermal_Capacity_W = sum(float(item[1]) for item in lstHPThermal_Capacity_W if item[1] is not None)
+            lblHPThermCapacity = self.dictInstructions['HP_Inputs']['GUI_Information']['Thermal_Capacity']['GUI_Val']
+            HP_Thermal_Capacity_W_str = f"{HP_Thermal_Capacity_W :.{self.dp_0}f}"
+            # print("HP capacity: " + str(HP_Thermal_Capacity_W))
+            lblHPThermCapacity.config(text=HP_Thermal_Capacity_W_str)
+
+            # Heat transferred in day
+            lstHPHeatArgs = [self.HP_table, self.HP_heat_load_SQL]
+            lstHPDayHeat = self.all_day_query(lstHPHeatArgs)
+            HP_Heat_Wh = sum(float(item[1]) for item in lstHPDayHeat if item[1] is not None)
+            lblHPHeat = self.dictInstructions['HP_Inputs']['GUI_Information']['Heat_load']['GUI_Val']
+            HP_Heat_Wh_str = f"{HP_Heat_Wh :.{self.dp_0}f}"
+            # print("HP heat: " + str(HP_Heat_Wh))
+            lblHPHeat.config(text=HP_Heat_Wh_str)
+
+            # HP Internal electricity
+            lstHP_int_ElecArgs = [self.HP_table, self.HP_int_electricity_SQL]
+            lstHP_int_DayElec = self.all_day_query(lstHP_int_ElecArgs)
+            HP_int_Elec_Wh = sum(float(item[1]) for item in lstHP_int_DayElec if item[1] is not None)
+            lblHP_int_Elec = self.dictInstructions['HP_Inputs']['GUI_Information']['Internal_Unit_Elec_Wh']['GUI_Val']
+            HP_int_Elec_Wh_str = f"{HP_int_Elec_Wh :.{self.dp_0}f}"
+            # print("HP internal electricity all day: " + str(HP_int_Elec_Wh))
+            lblHP_int_Elec.config(text=HP_int_Elec_Wh_str)
+
+            # HP External electricity
+            lstHPElecArgs = [self.HP_table, self.HP_electricity_SQL]
+            lstHPDayElec = self.all_day_query(lstHPElecArgs)
+            HPElec_Wh = sum(float(item[1]) for item in lstHPDayElec if item[1] is not None)
+            lblHPElec = self.dictInstructions['HP_Inputs']['GUI_Information']['External_Unit_Elec_Wh']['GUI_Val']
+            HPElec_Wh_str = f"{HPElec_Wh :.{self.dp_0}f}"
+            # print("HP external electricity all day: " + str(HPElec_Wh))
+            lblHPElec.config(text=HPElec_Wh_str)
+
+            # HP hourly flow rate for GUI
+            lstHPFlowQry = [self.HP_table, self.HP_flow_SQL]
+            lstHPFlow_Rate_lstHr = self.last_hour_query(lstHPFlowQry)
+            #print("lstFlow_Rate_lstHr: " + str(lstFlow_Rate_lstHr))
+            HP_Flow_Rate_lstHr = sum(float(item[1]) for item in lstHPFlow_Rate_lstHr if item[1] is not None)
+            lblHPFlowRate = self.dictInstructions['HP_Inputs']['GUI_Information']['Flow_Rate']['GUI_Val']
+            HP_flow_str = f"{HP_Flow_Rate_lstHr :.{self.dp_0}f}"
+            # print("HP flow rate: " + str(solar_flow))
+            lblHPFlowRate.config(text=HP_flow_str)
+
+            #COP last hour
+            lstHPHeatArgs = [self.HP_table, self.HP_heat_load_SQL]
+            lstHPHeatLastHr = self.last_hour_query(lstHPHeatArgs)
+            fltHPHeatLastHr = sum(float(item[1]) for item in lstHPHeatLastHr if item[1] is not None)
+            lstExtElecArgs = [self.HP_table, self.HP_electricity_SQL]
+            lstHPExtElecLastHR = self.last_hour_query(lstExtElecArgs)
+            fltHPExtElecLastHR = sum(float(item[1]) for item in lstHPExtElecLastHR if item[1] is not None)
+            lstIntElecArgs = [self.HP_table, self.HP_int_electricity_SQL]
+            lstHPIntElecLastHR = self.last_hour_query(lstIntElecArgs)
+            fltHPIntElecLastHR = sum(float(item[1]) for item in lstHPIntElecLastHR if item[1] is not None)
+            boolIncludeInt = self.dictInstructions['User_Inputs']['Include_internal_unit_in_COP']
+
+            if boolIncludeInt:
+                if fltHPExtElecLastHR + fltHPIntElecLastHR != 0:
+                    fltCOPLastHR = fltHPExtElecLastHR / (fltHPExtElecLastHR + fltHPIntElecLastHR)
+                else:
+                    fltCOPLastHR = 0
+
+            else:
+                if fltHPExtElecLastHR != 0:
+                    fltCOPLastHR = fltHPHeatLastHr / fltHPExtElecLastHR
+                else:
+                    fltCOPLastHR = 0
+
+            lblHPCoP = self.dictInstructions['HP_Inputs']['GUI_Information']['HP_CoP']['GUI_Val']
+            HP_CoP_str = f"{fltCOPLastHR :.{self.dp_0}f}"
+            # print("HP CoP last hour: " + str(fltCOPLastHR))
+            lblHPCoP.config(text=HP_CoP_str)
+
+            #HP Pressure
+            lblHPPressure = self.dictInstructions['HP_Inputs']['GUI_Information']['HP_Pressure']['GUI_Val']
+            HP_Pressure = lstHPVals[5]
+            HP_Pressure_str = f"{HP_Pressure:.{self.dp_2}f}"
+            # print("HP Inlet temp: " + str(HP_outlet_temp))
+            lblHPPressure.config(text=HP_Pressure_str)
+
+            self.BMS_GUI.current_HP()
 
             now = datetime.now()
             seconds_until_next_minute = 60 - now.second - now.microsecond / 1_000_000
