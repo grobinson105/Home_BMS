@@ -394,7 +394,7 @@ class BMS_Sensors:
         SPIChannel = lstArgs[1]
         MCP3008_Channel = lstArgs[2]
 
-        voltage = read_MCP3008_SPI(SPIBus, SPIChannel, MCP3008_Channel)
+        voltage = self.read_MCP3008_SPI(SPIBus, SPIChannel, MCP3008_Channel)
         # print(voltage)
         R1_ohm = self.R1_resistance_OHM(10000, self.Vref, voltage)  # Resistor 2 on HeatSet PCB = 10k ohm    #print(R1_ohm)
         # print(R1_ohm)
