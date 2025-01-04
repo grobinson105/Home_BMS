@@ -13,12 +13,14 @@ class BMS_Sensors:
         self.sensor_server_live = False
         self.dictInstructions = A_Initialise.dictGlobalInstructions
         self.Vref = 3.3
+        self.port = port
 
         # Initialize attributes used by threads
         self.solar_sensors_collated = False
         self.HP_sensors_collated = False
         self.PV_sensors_collated = False
         self.BAT_sensors_collated = False
+        self.Zone_sensors_collated = False
 
         self.solar_pressure_SQL = self.dictInstructions['Solar_Inputs']['GUI_Information']['SYS_Pressure']['SQL_Title']
         self.solar_collector_SQL = self.dictInstructions['Solar_Inputs']['GUI_Information']['Collector_temp']['SQL_Title']
@@ -40,8 +42,12 @@ class BMS_Sensors:
         self.BAT_charge_SQL = self.dictInstructions['BAT_Inputs']['GUI_Information']['Charge_Supply']['SQL_Title']
         self.BAT_discharge_SQL = self.dictInstructions['BAT_Inputs']['GUI_Information']['Discharge_Supply']['SQL_Title']
 
+        self.Zone1_SQL = self.dictInstructions['ZONE_Inputs']['GUI_Information']['Zone_1']['SQL_Title']
+        self.Zone2_SQL = self.dictInstructions['ZONE_Inputs']['GUI_Information']['Zone_2']['SQL_Title']
+        self.Zone3_SQL = self.dictInstructions['ZONE_Inputs']['GUI_Information']['Zone_3']['SQL_Title']
+        self.Zone4_SQL = self.dictInstructions['ZONE_Inputs']['GUI_Information']['Zone_4']['SQL_Title']
+
         self.restart_threads()
-        threading.Thread(target=self.create, args=(port,), daemon=True).start()
         
 
     def restart_threads(self):
@@ -68,6 +74,14 @@ class BMS_Sensors:
         #BATTERY threads
         threading.Thread(target=self.BAT_Charge_read_thread, daemon=True).start()
         threading.Thread(target=self.BAT_discharge_read_thread, daemon=True).start()
+
+        #ZONE threads
+        threading.Thread(target=self.Zone1, daemon=True).start()
+        threading.Thread(target=self.Zone2, daemon=True).start()
+        threading.Thread(target=self.Zone3, daemon=True).start()
+        threading.Thread(target=self.Zone4, daemon=True).start()
+
+        threading.Thread(target=self.create, args=(self.port,), daemon=True).start()
 
     def create(self, port):
         self.last_request_time = None
@@ -104,6 +118,42 @@ class BMS_Sensors:
 
             if message == True:
                 self.continue_to_operate = False
+
+    def collate_Zone_sensors(self):
+        # Zone1 sensor
+        if len(self.lstZone1Reading) != 0:
+            avZone1 = sum(self.lstZone1Reading) / len(self.lstZone1Reading)
+        else:
+            avZone1 = 0
+        self.lstZone1Reading = []
+
+        # Zone2 sensor
+        if len(self.lstZone2Reading) != 0:
+            avZone2 = sum(self.lstZone2Reading) / len(self.lstZone2Reading)
+        else:
+            avZone2 = 0
+        self.lstZone2Reading = []
+
+        # Zone3 sensor
+        if len(self.lstZone3Reading) != 0:
+            avZone3 = sum(self.lstZone3Reading) / len(self.lstZone3Reading)
+        else:
+            avZone3 = 0
+        self.lstZone3Reading = []
+
+        # Zone4 sensor
+        if len(self.lstZone4Reading) != 0:
+            avZone4 = sum(self.lstZone4Reading) / len(self.lstZone4Reading)
+        else:
+            avZone4 = 0
+        self.lstZone4Reading = []
+
+        self.dictZoneData = [[self.Zone1_SQL, avZone1],
+                                [self.Zone2_SQL, avZone2],
+                                [self.Zone3_SQL, avZone3],
+                                [self.Zone4_SQL, avZone4]]
+
+        self.Zone_sensors_collated = True
 
     def collate_BAT_sensors(self):
         # BAT charge electricity meter
@@ -239,17 +289,19 @@ class BMS_Sensors:
         self.HP_sensors_collated = False
         self.PV_sensors_collated = False
         self.BAT_sensors_collated = False
+        self.Zone_sensors_collated = False
 
         threading.Thread(target=self.collate_solar_sensors, daemon=True).start()
         threading.Thread(target=self.collate_HP_sensors, daemon=True).start()
         threading.Thread(target=self.collate_PV_sensors, daemon=True).start()
         threading.Thread(target=self.collate_BAT_sensors, daemon=True).start()
+        threading.Thread(target=self.collate_Zone_sensors, daemon=True).start()
 
         while not all([self.solar_sensors_collated, self.HP_sensors_collated, self.PV_sensors_collated,
-                      self.BAT_sensors_collated]):
+                      self.BAT_sensors_collated, self.Zone_sensors_collated]):
             time.sleep(0.01)
 
-        dictData = [self.dictSolarData, self.dictHPData, self.dictPVData, self.dictBATData]
+        dictData = [self.dictSolarData, self.dictHPData, self.dictPVData, self.dictBATData, self.dictZoneData]
 
         return dictData
 
@@ -323,10 +375,32 @@ class BMS_Sensors:
         else:
             return 0
 
+    def R1_resistance_OHM(self, R2, Vin, Vout):  # Used to calculate the first resistor in a voltage divide circuit - used where Vin is too high for Pi
+        if Vout != 0:
+            R1 = (R2 * (Vin - Vout)) / Vout
+            return R1
+        else:
+            return 0
+
     def R2_resistance_OHM(self, R1, Vin, Vout):  # Used to calculate the second resistor in a voltage divide circuit
         if Vin - Vout != 0:
             R2 = (R1 * Vout) / (Vin - Vout)
             return R2
+        else:
+            return 0
+
+    def light_sensor(self, lstArgs):
+        SPIBus = lstArgs[0]
+        SPIChannel = lstArgs[1]
+        MCP3008_Channel = lstArgs[2]
+
+        voltage = read_MCP3008_SPI(SPIBus, SPIChannel, MCP3008_Channel)
+        # print(voltage)
+        R1_ohm = self.R1_resistance_OHM(10000, self.Vref, voltage)  # Resistor 2 on HeatSet PCB = 10k ohm    #print(R1_ohm)
+        # print(R1_ohm)
+        Resistance_ON = 2000  # The resistance of the photoresistor will be different for different LED lights so this needs to be calbirated but need not be exact
+        if R1_ohm >= Resistance_ON:  # Photo resistors have a lower resistance with greater light intensity
+            return 1  # The graph will plot a straight line against each zone
         else:
             return 0
 
@@ -380,7 +454,7 @@ class BMS_Sensors:
             current_state = GPIO.input(GPIO_Pin)
             if last_state == GPIO.HIGH and current_state == GPIO.LOW:
                 self.lstSolarWater.append(1)
-                print("Pulse from solar hot water")
+                #print("Pulse from solar hot water")
             last_state = current_state
             time.sleep(0.01)
 
@@ -393,7 +467,7 @@ class BMS_Sensors:
             current_state = GPIO.input(GPIO_Pin)
             if last_state == GPIO.HIGH and current_state == GPIO.LOW:
                 self.lstSolarElectricity.append(1)
-                print("Pulse from solar electricity")
+                #print("Pulse from solar electricity")
             last_state = current_state
             time.sleep(0.01)
 
@@ -422,7 +496,7 @@ class BMS_Sensors:
             current_state = GPIO.input(GPIO_Pin)
             if last_state == GPIO.HIGH and current_state == GPIO.LOW:
                 self.lstHPflow.append(1)
-                print("Pulse from HP hot water meter")
+                #print("Pulse from HP hot water meter")
             last_state = current_state
             time.sleep(0.01)
 
@@ -435,7 +509,7 @@ class BMS_Sensors:
             current_state = GPIO.input(GPIO_Pin)
             if last_state == GPIO.HIGH and current_state == GPIO.LOW:
                 self.lstHPelectricity.append(1)
-                print("Pulse from HP electricity meter")
+                #print("Pulse from HP electricity meter")
             last_state = current_state
             time.sleep(0.01)
 
@@ -448,7 +522,7 @@ class BMS_Sensors:
             current_state = GPIO.input(GPIO_Pin)
             if last_state == GPIO.HIGH and current_state == GPIO.LOW:
                 self.lstHP_int_electricity.append(1)
-                print("Pulse from HP internal electricity meter")
+                #print("Pulse from HP internal electricity meter")
             last_state = current_state
             time.sleep(0.01)
 
@@ -470,7 +544,7 @@ class BMS_Sensors:
             current_state = GPIO.input(GPIO_Pin)
             if last_state == GPIO.HIGH and current_state == GPIO.LOW:
                 self.lstPV_electricity.append(1)
-                print("Pulse from PV electricity meter")
+                #print("Pulse from PV electricity meter")
             last_state = current_state
             time.sleep(0.01)
 
@@ -483,7 +557,7 @@ class BMS_Sensors:
             current_state = GPIO.input(GPIO_Pin)
             if last_state == GPIO.HIGH and current_state == GPIO.LOW:
                 self.lstBATcharge_electricity.append(1)
-                print("Pulse from BAT charge electricity meter")
+                #print("Pulse from BAT charge electricity meter")
             last_state = current_state
             time.sleep(0.01)
 
@@ -496,6 +570,42 @@ class BMS_Sensors:
             current_state = GPIO.input(GPIO_Pin)
             if last_state == GPIO.HIGH and current_state == GPIO.LOW:
                 self.lstBATdischarge_electricity.append(1)
-                print("Pulse from BAT discharge electricity meter")
+                #print("Pulse from BAT discharge electricity meter")
             last_state = current_state
             time.sleep(0.01)
+
+    def Zone1(self):
+        self.lstZone1Reading = []
+        lstArgs = self.dictInstructions['ZONE_Inputs']['GUI_Information']['Zone_1']['Interface_args']
+
+        while self.continue_to_operate == True:
+            self.lstZone1Reading.append(self.light_sensor(lstArgs))
+            #print("HP Pressure readings: " + str(self.lstHPPressureReading))
+            time.sleep(1)
+
+    def Zone2(self):
+        self.lstZone2Reading = []
+        lstArgs = self.dictInstructions['ZONE_Inputs']['GUI_Information']['Zone_2']['Interface_args']
+
+        while self.continue_to_operate == True:
+            self.lstZone2Reading.append(self.light_sensor(lstArgs))
+            #print("HP Pressure readings: " + str(self.lstHPPressureReading))
+            time.sleep(1)
+
+    def Zone3(self):
+        self.lstZone3Reading = []
+        lstArgs = self.dictInstructions['ZONE_Inputs']['GUI_Information']['Zone_3']['Interface_args']
+
+        while self.continue_to_operate == True:
+            self.lstZone3Reading.append(self.light_sensor(lstArgs))
+            #print("HP Pressure readings: " + str(self.lstHPPressureReading))
+            time.sleep(1)
+
+    def Zone4(self):
+        self.lstZone4Reading = []
+        lstArgs = self.dictInstructions['ZONE_Inputs']['GUI_Information']['Zone_4']['Interface_args']
+
+        while self.continue_to_operate == True:
+            self.lstZone4Reading.append(self.light_sensor(lstArgs))
+            #print("HP Pressure readings: " + str(self.lstHPPressureReading))
+            time.sleep(1)
