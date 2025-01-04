@@ -49,6 +49,12 @@ class Home_BMS:
         self.PV_elec_SQL = self.dictInstructions['PV_Inputs']['GUI_Information']['Generation']['SQL_Title']
         self.PV_pulse_value = self.dictInstructions['PV_Inputs']['GUI_Information']['Generation']['Pulse_Value']
 
+        self.BAT_table = self.dictInstructions['BAT_Inputs']['Defaults']['Database_Table_Name']
+        self.BAT_charge_SQL = self.dictInstructions['BAT_Inputs']['GUI_Information']['Charge_Supply']['SQL_Title']
+        self.BAT_charge_pulse_value = self.dictInstructions['BAT_Inputs']['GUI_Information']['Charge_Supply']['Pulse_Value']
+        self.BAT_discharge_SQL = self.dictInstructions['BAT_Inputs']['GUI_Information']['Discharge_Supply']['SQL_Title']
+        self.BAT_discharge_pulse_value = self.dictInstructions['BAT_Inputs']['GUI_Information']['Discharge_Supply']['Pulse_Value']
+
         self.allocate_ports()
 
         if self.ports_boolSuccess == True:
@@ -430,6 +436,36 @@ class Home_BMS:
             self.DB_upload_data(lstPVArgs)
             print("BMS DB uploaded: PV values")
 
+            #####################################################################################################
+            # BATTERY database upload
+            lstBAT = lstData[3]  # BAT data is the third item in lstData
+
+            # Calculate BAT charge electricity in period
+            lstBATChargeCount = next((sublist for sublist in lstBAT if sublist[0] == self.BAT_charge_SQL), None)
+            fltBATChargeElec = float(lstBATChargeCount[1]) * self.BAT_charge_pulse_value
+
+            for item in lstBAT:
+                if item[0] == self.BAT_charge_SQL:
+                    item[1] = fltBATChargeElec  # Update the BAT elec data with the Wh rather than pulse count
+                    break
+
+            # Calculate BAT discharge electricity in period
+            lstBATdisChargeCount = next((sublist for sublist in lstBAT if sublist[0] == self.BAT_discharge_SQL), None)
+            fltBATdisChargeElec = float(lstBATdisChargeCount[1]) * self.BAT_discharge_pulse_value
+
+            for item in lstBAT:
+                if item[0] == self.BAT_discharge_SQL:
+                    item[1] = fltBATdisChargeElec  # Update the BAT elec data with the Wh rather than pulse count
+                    break
+
+            lstBATFields = [item[0] for item in lstBAT]
+            lstBATVals = [item[1] for item in lstBAT]
+
+            # Upload BAT data to database
+            lstBATArgs = [[self.BAT_table], lstBATFields, lstBATVals]
+            self.DB_upload_data(lstBATArgs)
+            print("BMS DB uploaded: BAT values")
+
             #####################
             # UPDATE GUI #
             #####################
@@ -645,6 +681,38 @@ class Home_BMS:
             self.BMS_GUI.PV_Gauge.add_gauge_line(PVElecHr_Wh)
 
             self.BMS_GUI.current_PV()
+
+            #####################################################################################################
+            # BAT tab
+            # electricity charged
+            lstBATChargeArgs = [self.BAT_table, self.BAT_charge_SQL]
+            lstBATChargeDayElec = self.all_day_query(lstBATChargeArgs)
+            BATChargeElec_Wh = sum(float(item[1]) for item in lstBATChargeDayElec if item[1] is not None)
+            lblBATCharge = self.dictInstructions['BAT_Inputs']['GUI_Information']['Charge_Supply']['GUI_Val']
+            BATChargeElec_Wh_str = f"{BATChargeElec_Wh :.{self.dp_0}f}"
+            # print(BAT charge electricity all day: " + str(BATChargeElec_Wh))
+            lblBATCharge.config(text=BATChargeElec_Wh_str)
+
+            #electricity discharged
+            lstBATdisChargeArgs = [self.BAT_table, self.BAT_discharge_SQL]
+            lstBATdisChargeDayElec = self.all_day_query(lstBATdisChargeArgs)
+            BATdisChargeElec_Wh = sum(float(item[1]) for item in lstBATdisChargeDayElec if item[1] is not None)
+            lblBATdisCharge = self.dictInstructions['BAT_Inputs']['GUI_Information']['Discharge_Supply']['GUI_Val']
+            BATdisChargeElec_Wh_str = f"{BATdisChargeElec_Wh :.{self.dp_0}f}"
+            # print(BAT discharge electricity all day: " + str(BATdisChargeElec_Wh))
+            lblBATdisCharge.config(text=BATdisChargeElec_Wh_str)
+
+            #Gauge
+            totalBAT = BATdisChargeElec_Wh + BATChargeElec_Wh
+            if totalBAT != 0:
+                if BATdisChargeElec_Wh > BATChargeElec_Wh:
+                    BAT_Gauge_Val = -BATdisChargeElec_Wh / totalBAT
+                else:
+                    BAT_Gauge_Val = BATChargeElec_Wh / totalBAT
+            else:
+                BAT_Gauge_Val = 0
+
+            self.BMS_GUI.BAT_Gauge.add_gauge_line(totalBAT)
 
             #####################################################################################################
             # CONCLUDE

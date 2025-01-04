@@ -18,13 +18,7 @@ class BMS_Sensors:
         self.solar_sensors_collated = False
         self.HP_sensors_collated = False
         self.PV_sensors_collated = False
-        self.lstPressureReading = []
-        self.lstCollector = []
-        self.lstTankTop = []
-        self.lstTankMid = []
-        self.lstTankBot = []
-        self.lstSolarWater = []
-        self.lstSolarElectricity = []
+        self.BAT_sensors_collated = False
 
         self.solar_pressure_SQL = self.dictInstructions['Solar_Inputs']['GUI_Information']['SYS_Pressure']['SQL_Title']
         self.solar_collector_SQL = self.dictInstructions['Solar_Inputs']['GUI_Information']['Collector_temp']['SQL_Title']
@@ -42,6 +36,9 @@ class BMS_Sensors:
         self.HP_pressure_SQL = self.dictInstructions['HP_Inputs']['GUI_Information']['HP_Pressure']['SQL_Title']
 
         self.PV_elec_SQL = self.dictInstructions['PV_Inputs']['GUI_Information']['Generation']['SQL_Title']
+
+        self.BAT_charge_SQL = self.dictInstructions['BAT_Inputs']['GUI_Information']['Charge_Supply']['SQL_Title']
+        self.BAT_discharge_SQL = self.dictInstructions['BAT_Inputs']['GUI_Information']['Discharge_Supply']['SQL_Title']
 
         self.restart_threads()
         threading.Thread(target=self.create, args=(port,), daemon=True).start()
@@ -67,6 +64,10 @@ class BMS_Sensors:
 
         #PV threads
         threading.Thread(target=self.PV_meter_read_thread, daemon=True).start()
+
+        #BATTERY threads
+        threading.Thread(target=self.BAT_Charge_read_thread, daemon=True).start()
+        threading.Thread(target=self.BAT_discharge_read_thread, daemon=True).start()
 
     def create(self, port):
         self.last_request_time = None
@@ -103,13 +104,27 @@ class BMS_Sensors:
 
             if message == True:
                 self.continue_to_operate = False
-                
+
+    def collate_BAT_sensors(self):
+        # BAT charge electricity meter
+        total_BAT_charge_elec_in_period = sum(self.lstBATcharge_electricity)
+        self.lstBATcharge_electricity = []
+
+        total_BAT_discharge_elec_in_period = sum(self.lstBATdischarge_electricity)
+        self.lstBATdischarge_electricity = []
+
+        self.dictBATData = [[self.BAT_charge_SQL, total_BAT_charge_elec_in_period],
+                           [self.BAT_discharge_SQL, total_BAT_discharge_elec_in_period]]
+
+        self.BAT_sensors_collated = True
+
     def collate_PV_sensors(self):
         # PV electricity meter
         total_PV_elec_in_period = sum(self.lstPV_electricity)
         self.lstPV_electricity = []
 
         self.dictPVData = [[self.PV_elec_SQL, total_PV_elec_in_period]]
+
         self.PV_sensors_collated = True
 
     def collate_HP_sensors(self):
@@ -223,15 +238,18 @@ class BMS_Sensors:
         self.solar_sensors_collated = False
         self.HP_sensors_collated = False
         self.PV_sensors_collated = False
+        self.BAT_sensors_collated = False
 
         threading.Thread(target=self.collate_solar_sensors, daemon=True).start()
         threading.Thread(target=self.collate_HP_sensors, daemon=True).start()
         threading.Thread(target=self.collate_PV_sensors, daemon=True).start()
+        threading.Thread(target=self.collate_BAT_sensors, daemon=True).start()
 
-        while not all([self.solar_sensors_collated, self.HP_sensors_collated, self.PV_sensors_collated]):
+        while not all([self.solar_sensors_collated, self.HP_sensors_collated, self.PV_sensors_collated,
+                      self.BAT_sensors_collated]):
             time.sleep(0.01)
 
-        dictData = [self.dictSolarData, self.dictHPData, self.dictPVData]
+        dictData = [self.dictSolarData, self.dictHPData, self.dictPVData, self.dictBATData]
 
         return dictData
 
@@ -453,5 +471,31 @@ class BMS_Sensors:
             if last_state == GPIO.HIGH and current_state == GPIO.LOW:
                 self.lstPV_electricity.append(1)
                 print("Pulse from PV electricity meter")
+            last_state = current_state
+            time.sleep(0.01)
+
+    def BAT_Charge_read_thread(self):
+        self.lstBATcharge_electricity = []
+        GPIO_Pin = self.dictInstructions['BAT_Inputs']['GUI_Information']['Charge_Supply']['Pulse_GPIO']
+        last_state = GPIO.input(GPIO_Pin)
+
+        while self.continue_to_operate == True:
+            current_state = GPIO.input(GPIO_Pin)
+            if last_state == GPIO.HIGH and current_state == GPIO.LOW:
+                self.lstBATcharge_electricity.append(1)
+                print("Pulse from BAT charge electricity meter")
+            last_state = current_state
+            time.sleep(0.01)
+
+    def BAT_discharge_read_thread(self):
+        self.lstBATdischarge_electricity = []
+        GPIO_Pin = self.dictInstructions['BAT_Inputs']['GUI_Information']['Discharge_Supply']['Pulse_GPIO']
+        last_state = GPIO.input(GPIO_Pin)
+
+        while self.continue_to_operate == True:
+            current_state = GPIO.input(GPIO_Pin)
+            if last_state == GPIO.HIGH and current_state == GPIO.LOW:
+                self.lstBATdischarge_electricity.append(1)
+                print("Pulse from BAT discharge electricity meter")
             last_state = current_state
             time.sleep(0.01)
