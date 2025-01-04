@@ -17,6 +17,7 @@ class BMS_Sensors:
         # Initialize attributes used by threads
         self.solar_sensors_collated = False
         self.HP_sensors_collated = False
+        self.PV_sensors_collated = False
         self.lstPressureReading = []
         self.lstCollector = []
         self.lstTankTop = []
@@ -40,6 +41,8 @@ class BMS_Sensors:
         self.HP_int_electricity_SQL = self.dictInstructions['HP_Inputs']['GUI_Information']['Internal_Unit_Elec_Wh']['SQL_Title']
         self.HP_pressure_SQL = self.dictInstructions['HP_Inputs']['GUI_Information']['HP_Pressure']['SQL_Title']
 
+        self.PV_elec_SQL = self.dictInstructions['PV_Inputs']['GUI_Information']['Generation']['SQL_Title']
+
         self.restart_threads()
         threading.Thread(target=self.create, args=(port,), daemon=True).start()
         
@@ -61,6 +64,9 @@ class BMS_Sensors:
         threading.Thread(target=self.HP_elec_meter_read_thread, daemon=True).start()
         threading.Thread(target=self.HP_internal_elec_meter_read_thread, daemon=True).start()
         threading.Thread(target=self.HP_pressure_sensor_read_thread, daemon=True).start()
+
+        #PV threads
+        threading.Thread(target=self.PV_meter_read_thread(), daemon=True).start()
 
     def create(self, port):
         self.last_request_time = None
@@ -98,6 +104,14 @@ class BMS_Sensors:
             if message == True:
                 self.continue_to_operate = False
                 
+    def collate_PV_sensors(self):
+        # PV electricity meter
+        total_PV_elec_in_period = sum(self.lstPV_electricity)
+        self.lstPV_electricity = []
+
+        self.dictPVData = [[self.PV_elec_SQL, total_PV_elec_in_period]]
+        self.PV_sensors_collated = True
+
     def collate_HP_sensors(self):
         if len(self.lstHPOutlet) != 0:
             avHPOutletTemp = sum(self.lstHPOutlet) / len(self.lstHPOutlet)
@@ -208,14 +222,16 @@ class BMS_Sensors:
     def collate_sensors(self):
         self.solar_sensors_collated = False
         self.HP_sensors_collated = False
+        self.PV_sensors_collated = False
 
         threading.Thread(target=self.collate_solar_sensors, daemon=True).start()
         threading.Thread(target=self.collate_HP_sensors, daemon=True).start()
+        threading.Thread(target=self.collate_PV_sensors, daemon=True).start()
 
-        while not all([self.solar_sensors_collated, self.HP_sensors_collated]):
+        while not all([self.solar_sensors_collated, self.HP_sensors_collated, self.PV_sensors_collated]):
             time.sleep(0.01)
 
-        dictData = [self.dictSolarData, self.dictHPData]
+        dictData = [self.dictSolarData, self.dictHPData, self.dictPVData]
 
         return dictData
 
@@ -426,3 +442,16 @@ class BMS_Sensors:
             self.lstHPPressureReading.append(self.pressure_5V_via_MCP3008(lstArgs))
             #print("HP Pressure readings: " + str(self.lstHPPressureReading))
             time.sleep(1)
+
+    def PV_meter_read_thread(self):
+        self.lstPV_electricity = []
+        GPIO_Pin = self.dictInstructions['PV_Inputs']['GUI_Information']['Generation']['Pulse_GPIO']
+        last_state = GPIO.input(GPIO_Pin)
+
+        while self.continue_to_operate == True:
+            current_state = GPIO.input(GPIO_Pin)
+            if last_state == GPIO.HIGH and current_state == GPIO.LOW:
+                self.lstPV_electricity.append(1)
+                print("Pulse from PV electricity meter")
+            last_state = current_state
+            time.sleep(0.01)

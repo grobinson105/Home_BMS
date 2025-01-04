@@ -45,6 +45,10 @@ class Home_BMS:
         self.HP_int_electricity_SQL = self.dictInstructions['HP_Inputs']['GUI_Information']['Internal_Unit_Elec_Wh']['SQL_Title']
         self.HP_heat_load_SQL = self.dictInstructions['HP_Inputs']['GUI_Information']['Heat_load']['SQL_Title']
 
+        self.PV_table = self.dictInstructions['PV_Inputs']['Defaults']['Database_Table_Name']
+        self.PV_elec_SQL = self.dictInstructions['PV_Inputs']['GUI_Information']['Generation']['SQL_Title']
+        self.PV_pulse_value = self.dictInstructions['PV_Inputs']['GUI_Information']['Generation']['Pulse_Value']
+
         self.allocate_ports()
 
         if self.ports_boolSuccess == True:
@@ -405,6 +409,27 @@ class Home_BMS:
             self.DB_upload_data(lstHPArgs)
             print("BMS DB uploaded: HP values")
 
+            #####################################################################################################
+            # PV database upload
+            lstPV = lstData[2]  # PV data is the second item in lstData
+
+            # Calculate PV electricity in period
+            lstPVElecCount = next((sublist for sublist in lstPV if sublist[0] == self.PV_elec_SQL), None)
+            fltPVElec = float(lstPVElecCount[1]) * self.PV_pulse_value
+
+            for item in lstPV:
+                if item[0] == self.PV_elec_SQL:
+                    item[1] = fltPVElec  # Update the PV elec data with the Wh rather than pulse count
+                    break
+
+            lstPVFields = [item[0] for item in lstPV]
+            lstPVVals = [item[1] for item in lstPV]
+
+            # Upload PV data to database
+            lstPVArgs = [[self.PV_table], lstPVFields, lstPVVals]
+            self.DB_upload_data(lstPVArgs)
+            print("BMS DB uploaded: PV values")
+
             #####################
             # UPDATE GUI #
             #####################
@@ -601,6 +626,28 @@ class Home_BMS:
             lblHPPressure.config(text=HP_Pressure_str)
 
             self.BMS_GUI.current_HP()
+
+            #####################################################################################################
+            # PV tab
+
+            # electricity GENERATED
+            lstPVElecArgs = [self.PV_table, self.PV_elec_SQL]
+            lstPVDayElec = self.all_day_query(lstPVElecArgs)
+            PVElec_Wh = sum(float(item[1]) for item in lstPVDayElec if item[1] is not None)
+            lblPVElec = self.dictInstructions['PV_Inputs']['GUI_Information']['Generation']['GUI_Val']
+            PVElec_Wh_str = f"{PVElec_Wh :.{self.dp_0}f}"
+            # print(PV electricity all day: " + str(PVElec_Wh))
+            lblPVElec.config(text=PVElec_Wh_str)
+
+            #PV Capacity last hour
+            lstPVHrElec = self.last_hour_query(lstPVElecArgs)
+            PVElecHr_Wh = sum(float(item[1]) for item in lstPVHrElec if item[1] is not None)
+            self.BMS_GUI.PV_Gauge.add_gauge_line(PVElecHr_Wh)
+
+            self.BMS_GUI.current_PV()
+
+            #####################################################################################################
+            # CONCLUDE
 
             now = datetime.now()
             seconds_until_next_minute = 60 - now.second - now.microsecond / 1_000_000

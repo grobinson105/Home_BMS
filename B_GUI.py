@@ -318,6 +318,16 @@ class build_GUI:
         strDateCurrSQL = self.convert_SQL_date(dtDateNext)
         self.run_HP(strDatePrevSQL, strDateCurrSQL, False)
 
+    def current_PV(self):
+        #print(strDate)
+        strDate = self.PV_Graph.return_title()
+        dtDate = dt.datetime.strptime(strDate, "%d/%m/%Y")
+        dtDateNext = dtDate + dt.timedelta(days=1)
+
+        strDatePrevSQL = self.convert_SQL_date(dtDate)
+        strDateCurrSQL = self.convert_SQL_date(dtDateNext)
+        self.run_PV(strDatePrevSQL, strDateCurrSQL)
+
     def run_solar(self, strDatePrevSQL, strDateCurrSQL):
         #Collector Temperature
         Collect_Field = self.dictInstructions['Solar_Inputs']['GUI_Information']['Collector_temp']['SQL_Title']
@@ -1619,7 +1629,7 @@ class build_GUI:
 
         #Insert PV Graph and gauge
         self.Zone_Graph = cht_plt.GUI_graph(dictInstructions['ZONE_Inputs']['Graph_params'], self.frmZoneGraph)
-        self.Zone_Gauge = cht_plt.GUI_gauge(dictInstructions['ZONE_Inputs']['Gauge_params'], self.frmZoneGauge)
+        #self.Zone_Gauge = cht_plt.GUI_gauge(dictInstructions['ZONE_Inputs']['Gauge_params'], self.frmZoneGauge)
 
     def update_GUI_vals_thread(self, dictUpdates):
         for key in dictInstructions['Solar_Inputs']['GUI_Information']:
