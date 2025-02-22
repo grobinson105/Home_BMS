@@ -397,7 +397,7 @@ class build_GUI:
         strLabel = self.HP_chg_graph_cmd.cget("text")
         lstArgs = [strDatePrevSQL, strDateCurrSQL]
 
-        print("CHANGING GRAPH: " + str(bool_chg))
+        #print("CHANGING GRAPH: " + str(bool_chg))
 
         if bool_chg == True:
             strDate = self.HP_Graph.return_title()
@@ -464,13 +464,13 @@ class build_GUI:
         strDateCurrSQL = lstArgs[1]
 
         Outlet_Temp = self.dictInstructions['HP_Inputs']['GUI_Information']['Outlet_Temperature']['SQL_Title']
-        print("Outliet_Temp: " + Outlet_Temp)
+        #print("Outliet_Temp: " + Outlet_Temp)
         plot_colour = self.dictInstructions['HP_Inputs']['GUI_Information']['Outlet_Temperature']['Plot_colour']
-        print("plot_colour: " + plot_colour)
+        #print("plot_colour: " + plot_colour)
         plot_series = self.dictInstructions['HP_Inputs']['GUI_Information']['Outlet_Temperature']['Plot_index']
-        print("plot_series: " + str(plot_series))
+        #print("plot_series: " + str(plot_series))
         plot_name = self.dictInstructions['HP_Inputs']['GUI_Information']['Outlet_Temperature']['Plot_label']
-        print("plot_name: " + plot_name)
+        #print("plot_name: " + plot_name)
         lstArgs = [strDatePrevSQL, strDateCurrSQL, self.HP_table_name, Outlet_Temp]
         #print(lstArgs)
         lstData = self.request_db_data("extract_values", lstArgs)
