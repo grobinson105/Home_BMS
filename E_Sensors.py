@@ -268,7 +268,7 @@ class BMS_Sensors:
 
         #Solar hot water flow meter
         total_solar_flow_in_period = sum(self.lstSolarWater)
-        self.lstsolarWater = []
+        self.lstSolarWater = []
 
         #Solar hot water flow meter
         total_solar_electricity_in_period = sum(self.lstSolarElectricity)
