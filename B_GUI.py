@@ -272,7 +272,7 @@ class build_GUI:
         strDatePrevSQL = self.convert_SQL_date(dtDatePrev)
         strDateCurrSQL = self.convert_SQL_date(dtDate)
         self.Solar_Graph.update_graph_title(dt.datetime.strftime(dtDatePrev, "%d/%m/%Y", ))
-        self.run_solar(strDatePrevSQL, strDateCurrSQL)
+        self.run_solar(strDatePrevSQL, strDateCurrSQL, False)
 
     def next_solar(self):
         strDate = self.Solar_Graph.return_title()
@@ -285,7 +285,7 @@ class build_GUI:
         strDateNextSQL = self.convert_SQL_date(dtDateNext1)
         strDateCurrSQL = self.convert_SQL_date(dtDateNext)
         self.Solar_Graph.update_graph_title(dt.datetime.strftime(dtDateNext, "%d/%m/%Y", ))
-        self.run_solar(strDateCurrSQL, strDateNextSQL)
+        self.run_solar(strDateCurrSQL, strDateNextSQL, False)
 
     def reset_solar(self):
         #print(strDate)
@@ -296,7 +296,7 @@ class build_GUI:
         strDatePrevSQL = self.convert_SQL_date(dtDate)
         strDateCurrSQL = self.convert_SQL_date(dtDateNext)
         self.Solar_Graph.update_graph_title(dt.datetime.strftime(dtDate, "%d/%m/%Y", ))
-        self.run_solar(strDatePrevSQL, strDateCurrSQL)
+        self.run_solar(strDatePrevSQL, strDateCurrSQL, False)
 
     def current_solar(self):
         #print(strDate)
@@ -306,7 +306,7 @@ class build_GUI:
 
         strDatePrevSQL = self.convert_SQL_date(dtDate)
         strDateCurrSQL = self.convert_SQL_date(dtDateNext)
-        self.run_solar(strDatePrevSQL, strDateCurrSQL)
+        self.run_solar(strDatePrevSQL, strDateCurrSQL, False)
 
     def current_HP(self):
         #print(strDate)
@@ -348,7 +348,49 @@ class build_GUI:
         strDateCurrSQL = self.convert_SQL_date(dtDateNext)
         self.run_Zone(strDatePrevSQL, strDateCurrSQL)
 
-    def run_solar(self, strDatePrevSQL, strDateCurrSQL):
+    def run_solar(self, strDatePrevSQL, strDateCurrSQL, bool_chg):
+        strLabel = self.Solar_chg_graph_cmd.cget("text")
+        lstArgs = [strDatePrevSQL, strDateCurrSQL]
+
+        #print("CHANGING GRAPH: " + str(bool_chg))
+
+        if bool_chg == True:
+            strDate = self.Solar_Graph.return_title()
+            self.frmSolarGraph.destroy()
+            self.frmSolarGraph = tk.Frame(self.Solar_Tab, pady=5, padx=5, highlightbackground="black",
+                                       highlightcolor="black",
+                                       highlightthickness=1)
+            # frmSolarGraph.bind('<Button>',cmd_lightUp)
+            self.frmSolarGraph.pack()
+            self.frmSolarGraph.place(y=self.dictInstructions['Solar_Inputs']['GUI_params']['Graph_Section']['Graph_y'],
+                                  x=self.dictInstructions['Solar_Inputs']['GUI_params']['Graph_Section']['Graph_x'],
+                                  height=self.dictInstructions['Solar_Inputs']['GUI_params']['Graph_Section'][
+                                      'GraphFm_height'],
+                                  width=self.dictInstructions['Solar_Inputs']['GUI_params']['Graph_Section'][
+                                      'GraphFm_width'])
+
+            if strLabel == "GRAPH 1":
+                self.Solar_Graph = cht_plt.GUI_graph(self.dictInstructions['Solar_Inputs']['Graph2_params'],
+                                                    self.frmSolarGraph)
+                self.Solar_Graph.update_graph_title(strDate)
+                self.Solar_chg_graph_cmd.config(text="GRAPH 2")
+
+            if strLabel == "GRAPH 2":
+                self.Solar_Graph = cht_plt.GUI_graph(self.dictInstructions['Solar_Inputs']['Graph1_params'], self.frmSolarGraph)
+                self.Solar_Graph.update_graph_title(strDate)
+                self.Solar_chg_graph_cmd.config(text="GRAPH 1")
+
+        strLabel = self.Solar_chg_graph_cmd.cget("text")
+        if strLabel == "GRAPH 1":
+            self.run_solar_1(lstArgs)
+
+        if strLabel == "GRAPH 2":
+            self.run_solar_2(lstArgs)
+
+    def run_solar_1(self, lstArgs):
+        strDatePrevSQL = lstArgs[0]
+        strDateCurrSQL = lstArgs[1]
+        
         #Collector Temperature
         Collect_Field = self.dictInstructions['Solar_Inputs']['GUI_Information']['Collector_temp']['SQL_Title']
         plot_colour = self.dictInstructions['Solar_Inputs']['GUI_Information']['Collector_temp']['Plot_colour']
@@ -392,6 +434,21 @@ class build_GUI:
         lstTankBotData = self.request_db_data("extract_values", lstTankBotArgs)
         lstTankBotVals = self.convert_time_to_minutes(lstTankBotData)
         self.Solar_Graph.plot_chart(lstTankBotVals, plot_tank_bot_colour, plot_tank_bot_series, plot_tank_bot_name)
+
+    def run_solar_2(self, lstArgs):
+        strDatePrevSQL = lstArgs[0]
+        strDateCurrSQL = lstArgs[1]
+        
+        #Collector Flow rate
+        Flow_Field = self.dictInstructions['Solar_Inputs']['GUI_Information']['Flow_Rate']['SQL_Title']
+        plot_colour = self.dictInstructions['Solar_Inputs']['GUI_Information']['Flow_Rate']['Plot_colour']
+        plot_series = self.dictInstructions['Solar_Inputs']['GUI_Information']['Flow_Rate']['Plot_index']
+        plot_name = self.dictInstructions['Solar_Inputs']['GUI_Information']['Flow_Rate']['Plot_label']
+        lstArgs = [strDatePrevSQL, strDateCurrSQL, self.solar_table_name, Flow_Field]
+        #print(lstArgs)
+        lstData = self.request_db_data("extract_values", lstArgs)
+        lstVals = self.convert_time_to_minutes(lstData)
+        self.Solar_Graph.plot_chart(lstVals, plot_colour, plot_series, plot_name)
 
     def run_HP(self, strDatePrevSQL, strDateCurrSQL, bool_chg):
         strLabel = self.HP_chg_graph_cmd.cget("text")
@@ -612,6 +669,17 @@ class build_GUI:
         strDateCurrSQL = self.convert_SQL_date(dtDate)
         self.run_HP(strDateCurrSQL, strDateNextSQL, True)
 
+    def change_solar_chart(self):
+        strDate = self.Solar_Graph.return_title()
+        dtDate = dt.datetime.strptime(strDate, "%d/%m/%Y")
+        dtDateNext = dtDate + dt.timedelta(days=1)
+        if dtDateNext == dt.datetime.now():
+            self.Date_HP_Next_Cmd.pack_forget()
+
+        strDateNextSQL = self.convert_SQL_date(dtDateNext)
+        strDateCurrSQL = self.convert_SQL_date(dtDate)
+        self.run_solar(strDateCurrSQL, strDateNextSQL, True)
+
     def create_master_window(self, dictInstructions):
         self.RootWin.wm_title("HEATSET: Home Energy Management System")
         lngScreenWidth = dictInstructions['General_Inputs']['Screen_Width']
@@ -732,10 +800,21 @@ class build_GUI:
                                        command=self.reset_solar)
         self.Date_Solar_Reset_Cmd.place(y=1,
                                  x=dictInstructions['Solar_Inputs']['GUI_params']['Graph_Section'][
-                                           'GraphFm_width']/2 - 40,
+                                           'GraphFm_width']/2 - 70,
                                  height=20 * dictInstructions['General_Inputs']['Height_ADJ'],
                                  width=50 * dictInstructions['General_Inputs']['Width_ADJ'])
-
+        
+        self.Solar_chg_graph_cmd = tk.Button(self.frmSolarGraphButton,
+                                       text="GRAPH 1",
+                                       font=(dictInstructions['General_Inputs']['Font'],
+                                             dictInstructions['General_Inputs']['Font_size']),
+                                       command=self.change_solar_chart)
+        self.Solar_chg_graph_cmd.place(y=1,
+                                 x=dictInstructions['Solar_Inputs']['GUI_params']['Graph_Section'][
+                                           'GraphFm_width']/2 + 20,
+                                 height=20 * dictInstructions['General_Inputs']['Height_ADJ'],
+                                 width=70 * dictInstructions['General_Inputs']['Width_ADJ'])
+        
         # Place HeatSet Logo
         strImageLoc = str(dictInstructions['Solar_Inputs']['Defaults']['Logo'])
         self.tkSolarImage = ImageTk.PhotoImage(Image.open(strImageLoc))
@@ -842,7 +921,7 @@ class build_GUI:
         self.Solar_Gauge = cht_plt.GUI_gauge(dictInstructions['Solar_Inputs']['Gauge_params'], self.frmSolarSYS)
 
         #Insert Solar Graph
-        self.Solar_Graph = cht_plt.GUI_graph(dictInstructions['Solar_Inputs']['Graph_params'], self.frmSolarGraph)
+        self.Solar_Graph = cht_plt.GUI_graph(dictInstructions['Solar_Inputs']['Graph1_params'], self.frmSolarGraph)
 
         if dictInstructions['User_Inputs']['Solar_Control'] == True:
             #Loop through all system buttons per list lstSolarSysOrderByID defined in System_Initialize

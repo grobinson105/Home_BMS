@@ -408,9 +408,9 @@ dictFlowSensor = {'ID': 20,
                         'Pulse_calc_flow_load_dict': None,
                         'Plot_Values?': False,
                         'Plot_Value_List': [],
-                        'Plot_index': None,
-                        'Plot_colour': None,
-                        'Plot_label': None,
+                        'Plot_index': 1,
+                        'Plot_colour': 'red',
+                        'Plot_label': 'Flow rate L/M',
                         'Derived_Val': False}
 dictSolarPumpElectrictyLoad = {'ID':21,
                         'Include?': True,
@@ -741,7 +741,7 @@ dictSolarSYS = {'SYSFm_height': frmSolarSYSHeight, 'SYSFm_width': frmSolarSYSWid
 dictSolarGauge = {'Fm_height': frmSolarSYSHeight, 'Fm_width': frmSolarSYSWidth, 'Gauge_x': frmSolarSYS_x, 'Gauge_y': frmSolarSYS_y}
 dictSolarGUIParams = {'Sensor_Section': dictSolarSensors, 'System_Section': dictSolarSYS, 'Gauge_Section': dictSolarGauge,'Graph_Section': dictSolarGraph}
 
-#SOLAR GRAPH
+#SOLAR GRAPH1
 frm_Solar_Graph_bd = 1
 bx_Solar_Graph_width = frmSolarGraphWidth
 bx_Solar_Graph_height = frmSolarGraphHeight-40
@@ -783,7 +783,52 @@ dict_Solar_Graph_Values = {'include_grid': boolGrid_Solar_Graph,
                                 'tm_y_major': tm_Solar_Graph_y_major,
                                 'tm_major_length': tm_Solar_Graph_major_length,
                                 'frm_title':frm_Solar_Graph_title}
-dict_Solar_Graph_Instructions = {'Dimensions': dict_Solar_Graph_Frame_Dims, 'Values': dict_Solar_Graph_Values}
+dict_Solar_Graph1_Instructions = {'Dimensions': dict_Solar_Graph_Frame_Dims, 'Values': dict_Solar_Graph_Values}
+
+#SOLAR GRAPH2
+frm_Solar_Graph2_bd = 1
+bx_Solar_Graph2_width = frmSolarGraphWidth
+bx_Solar_Graph2_height = frmSolarGraphHeight-40
+bx_Solar_Graph2_x0 = 0
+bx_Solar_Graph2_y0 = 0
+tm_Solar_Graph2_length = 5 #pixel length of the minor tm line
+tm_Solar_Graph2_major_length = 10 #pixel length of the major tm line
+tm_Solar_Graph2_x_count = 24*2 #Show tickmarks each half hour
+tm_Solar_Graph2_x_major = 2 #Show major tm on the hour
+Solar_Graph2_x_max = 24 #maximum value of x axis is 24th hour
+Solar_Graph2_x_min = 0 #minimum value on the x axis in the 0th hour
+tm_Solar_Graph2_y_count = 10 #Show a tm for each DegC
+tm_Solar_Graph2_y_major= 1 #Show major tm for every 5 DegC
+Solar_Graph2_y_max = 10 #Maximum temperature on y-axis is 150 Degrees celcius
+Solar_Graph2_y_min = 0 #Minimum temperature on y-axisis 0 DegC
+frm_Solar_Graph2_title = dt.datetime.now().strftime("%d/%m/%Y")
+boolGrid_Solar_Graph2 = True
+Solar_Graph2_x_title = 'Time (hour of day)'
+Solar_Graph2_y_title = 'Flow Rate (L/M)'
+
+dict_Solar_Graph2_Frame_Dims = {'frm_width': frmSolarGraphWidth,
+                                'frm_height': frmSolarGraphHeight,
+                                'frm_bd': frm_Solar_Graph2_bd,
+                                'bx_width': bx_Solar_Graph2_width,
+                                'bx_height': bx_Solar_Graph2_height,
+                                'bx_x0': bx_Solar_Graph2_x0,
+                                'bx_y0': bx_Solar_Graph2_y0}
+dict_Solar_Graph2_Values = {'include_grid': boolGrid_Solar_Graph2,
+                                'graph_x_title': Solar_Graph2_x_title,
+                                'graph_x_max': Solar_Graph2_x_max,
+                                'graph_x_min': Solar_Graph2_x_min,
+                                'graph_y_title': Solar_Graph2_y_title,
+                                'graph_y_max': Solar_Graph2_y_max,
+                                'graph_y_min': Solar_Graph2_y_min,
+                                'tm_length': tm_Solar_Graph2_length,
+                                'tm_x_count': tm_Solar_Graph2_x_count,
+                                'tm_x_major': tm_Solar_Graph2_x_major,
+                                'tm_y_count': tm_Solar_Graph2_y_count,
+                                'tm_y_major': tm_Solar_Graph2_y_major,
+                                'tm_major_length': tm_Solar_Graph2_major_length,
+                                'frm_title':frm_Solar_Graph2_title}
+dict_Solar_Graph2_Instructions = {'Dimensions': dict_Solar_Graph2_Frame_Dims, 'Values': dict_Solar_Graph2_Values}
+
 
 #SOLAR THERMAL OUTPUT GAUGE (WHEN SOLAR CONTROL = FALSE)
 frm_Solar_Gauge_bd = 1
@@ -821,7 +866,8 @@ dictGlobalSolar = {'GUI_Information': dictGlobalGUI,
                                 'GUI_Commands': dictCommmands,
                                 'Defaults': dictSolarDefaults,
                                 'GUI_params': dictSolarGUIParams,
-                                'Graph_params': dict_Solar_Graph_Instructions,
+                                'Graph1_params': dict_Solar_Graph1_Instructions,
+                                'Graph2_params': dict_Solar_Graph2_Instructions,
                                 'Gauge_params': dict_Solar_Instructions}
 
 #############################################
