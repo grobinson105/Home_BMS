@@ -88,9 +88,9 @@ class build_GUI:
             if item[1] != None:
                 fltMultiple = zone_ID + 1
                 if item[1] != 0:
-                    item[1] = fltMultiple - ((1-float(item[1])) * 0.5)
+                    item[1] = fltMultiple - ((1-float(item[1])) * 0.5) - 1
                 else:
-                    item[1] = fltMultiple - 0.5
+                    item[1] = fltMultiple - 0.5 - 1
             else:
                 item[1] = 0
         #print("Time stamp updated to minutes:" + str(lstVals))
@@ -237,7 +237,7 @@ class build_GUI:
         strDatePrevSQL = self.convert_SQL_date(dtDate)
         strDateCurrSQL = self.convert_SQL_date(dtDateNext)
         self.Zone_Graph.update_graph_title(dt.datetime.strftime(dtDate, "%d/%m/%Y", ))
-        self.run_Zone(strDatePrevSQL, strDateCurrSQL, False)
+        self.run_Zone(strDatePrevSQL, strDateCurrSQL)
 
     def reset_PV(self):
         #print(strDate)

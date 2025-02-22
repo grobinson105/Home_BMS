@@ -454,7 +454,7 @@ class BMS_Sensors:
             current_state = GPIO.input(GPIO_Pin)
             if last_state == GPIO.HIGH and current_state == GPIO.LOW:
                 self.lstSolarWater.append(1)
-                print("Solar hot water pulse meter: " + str(self.lstSolarWater))
+                #print("Solar hot water pulse meter: " + str(self.lstSolarWater))
             last_state = current_state
             time.sleep(0.01)
 

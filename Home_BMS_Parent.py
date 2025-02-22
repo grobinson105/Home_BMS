@@ -345,7 +345,7 @@ class Home_BMS:
             #print(lstSolarWaterFlowCount)
             fltSolarWaterFlow = float(lstSolarWaterFlowCount[1]) * self.solar_flow_pulse_value
             #print("Solar pulse value: " + str(self.solar_flow_pulse_value))
-            print("Solar water flow in period Litres: " + str(fltSolarWaterFlow))
+            #print("Solar water flow in period Litres: " + str(fltSolarWaterFlow))
             
             for item in lstSolar:
                 if item[0] == self.solar_flow_SQL:
@@ -525,11 +525,11 @@ class Home_BMS:
             #solar hourly flow rate for GUI
             lstSolarFlowQry = [self.solar_table, self.solar_flow_SQL]
             lstFlow_Rate_lstHr = self.last_hour_query(lstSolarFlowQry)
-            print("lstFlow_Rate_lstHr: " + str(lstFlow_Rate_lstHr))
+            #print("lstFlow_Rate_lstHr: " + str(lstFlow_Rate_lstHr))
             Flow_Rate_lstHr = sum(float(item[1]) for item in lstFlow_Rate_lstHr if item[1] is not None)
             lblFlowRate = self.dictInstructions['Solar_Inputs']['GUI_Information']['Flow_Rate']['GUI_Val']
             solar_flow_str = f"{Flow_Rate_lstHr :.{self.dp_0}f}"
-            print("Solar flow rate: " + str(solar_flow_str))
+            #print("Solar flow rate: " + str(solar_flow_str))
             lblFlowRate.config(text=solar_flow_str)
 
             #solar thermal capacity over previous hour
