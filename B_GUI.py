@@ -38,14 +38,14 @@ class build_GUI:
         socket = context.socket(zmq.REQ)
         socket.connect("tcp://localhost:" + str(self.parent_port))
         lstPackage = [function, lstArgs]
-        print("GUI sending to parent following information: " + str(lstPackage))
+        #print("GUI sending to parent following information: " + str(lstPackage))
         data = json.dumps(lstPackage).encode("utf-8")
         #print("sending:" + str(data))
-        print("GUI: sending DB request via port " + str(self.parent_port))
+        #print("GUI: sending DB request via port " + str(self.parent_port))
         socket.send(data)
-        print("GUI: DB request sent. Waiting for response")
+        #print("GUI: DB request sent. Waiting for response")
         response = socket.recv()
-        print("GUI: DB response received")
+        #print("GUI: DB response received")
         lstData = json.loads(response.decode("utf-8"))
         #print("GUI DATA = " + str(lstData))
         return lstData

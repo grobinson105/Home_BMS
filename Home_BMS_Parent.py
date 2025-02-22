@@ -148,11 +148,11 @@ class Home_BMS:
         lstPackage = self.quit_sys
         data = json.dumps(lstPackage).encode("utf-8")
         # print("sending:" + str(data))
-        print("Parent: sending sensor request via port " + str(self.sensor_parent_port))
+        #print("Parent: sending sensor request via port " + str(self.sensor_parent_port))
         socket.send(data)
-        print("Parent: sensor request sent. Waiting for response")
+        #print("Parent: sensor request sent. Waiting for response")
         response = socket.recv()
-        print("GUI: Parent response from sensor received")
+        #print("GUI: Parent response from sensor received")
         lstData = json.loads(response.decode("utf-8"))
         # print("GUI DATA = " + str(lstData))
         return lstData
@@ -191,6 +191,7 @@ class Home_BMS:
     def calculate_heat_wh(self, glycol, litres, flow_temp, return_temp):
         fluid_capacity = self.ethelyne_glycol_heat_capacity(glycol)
         heat_load_wh = fluid_capacity * litres * (flow_temp - return_temp) * (10**3) / (60**2)
+        #print("Fluid capacity w/kgK: " + str(fluid_capacity) + " x litres: " + str(litres) + " x (flow temperature DegC: " + str(flow_temp) + " - return temp:" + str(return_temp) + ") x (10^3 / 60^2)= heat load: " + str(heat_load_wh))
         return heat_load_wh
 
     def call_method(self, method_name, *args, **kwargs):
@@ -228,11 +229,11 @@ class Home_BMS:
         #print(lstPackage)
         data = json.dumps(args).encode("utf-8")
         #print("sending:" + str(data))
-        print("Parent: requesting GUI data from DB " + str(self.db_parent_port))
+        #print("Parent: requesting GUI data from DB " + str(self.db_parent_port))
         socket.send(data)
-        print("Parent: GUI DB request sent. Waiting for response")
+        #print("Parent: GUI DB request sent. Waiting for response")
         response = socket.recv()
-        print("Parent: DB response received for GUI")
+        #print("Parent: DB response received for GUI")
         lstData = json.loads(response.decode("utf-8"))
         #print("GUI DATA = " + str(lstData))
         return lstData
@@ -244,11 +245,11 @@ class Home_BMS:
         lstPackage = ["upload_data", args]
         data = json.dumps(lstPackage).encode("utf-8")
         #print("sending:" + str(data))
-        print("Parent: sending data to DB for upload " + str(self.db_parent_port))
+        #print("Parent: sending data to DB for upload " + str(self.db_parent_port))
         socket.send(data)
-        print("Parent: DB data upload request sent. Waiting for response")
+        #print("Parent: DB data upload request sent. Waiting for response")
         response = socket.recv()
-        print("Parent: DB data upload response received")
+        #print("Parent: DB data upload response received")
         lstData = json.loads(response.decode("utf-8"))
         #print("GUI DATA = " + str(lstData))
         return lstData
@@ -256,24 +257,24 @@ class Home_BMS:
     def GUI_db_query_thread(self):
         context = zmq.Context.instance()
         socket = context.socket(zmq.REP)
-        print("Parent using port for GUI communication: " + str(self.GUI_parent_port))
+        #print("Parent using port for GUI communication: " + str(self.GUI_parent_port))
         socket.bind(f"tcp://*:{self.GUI_parent_port}")
-        print("Parent connected to " + str(self.GUI_parent_port) + " to bind with GUI.")
+        #print("Parent connected to " + str(self.GUI_parent_port) + " to bind with GUI.")
 
         while self.quit_sys == False:
-            print("Parent: waiting for GUI graph requests")
+            #print("Parent: waiting for GUI graph requests")
             message = socket.recv()
-            print("Parent received message from GUI: " + str(message))
+            #print("Parent received message from GUI: " + str(message))
             lstRequest = json.loads(message.decode("utf-8"))
             strFunction = lstRequest[0]
-            print("GUI function requested: " + str(strFunction))
+            #print("GUI function requested: " + str(strFunction))
             lstArgs = lstRequest[1]
-            print("GUI graph request arguments provided: " + str(lstArgs))
+            #print("GUI graph request arguments provided: " + str(lstArgs))
             lstReturn = self.call_method(strFunction, lstRequest) #globals()[strFunction](lstArgs)
             serialised_data = json.dumps(lstReturn).encode("utf-8")
-            print("Parent: sending response...")
+            #print("Parent: sending response...")
             socket.send(serialised_data)
-            print("DB: response sent.")
+            #print("DB: response sent.")
 
     def sensors_server_thread(self):
         print("Initiating sensor server thread")
@@ -323,9 +324,9 @@ class Home_BMS:
             
             self.quit_sys = self.BMS_GUI.quit_sys
             lstAll = self.call_sensor_data()
-            print("Sensor data received: " + str(lstAll))
+            #print("Sensor data received: " + str(lstAll))
             Seconds_Elapsed = int(lstAll[0]) #Used for pulse meter calculations
-            print("Seconds elapsed for sensor read: " + str(Seconds_Elapsed))
+            #print("Seconds elapsed for sensor read: " + str(Seconds_Elapsed))
             
             #########################
             # NEW DB RECORDS #
@@ -336,14 +337,15 @@ class Home_BMS:
             #######################################################################################################
             #Solar records
             lstSolar = lstData[0] # solar data is the first item in lstData
-            print("Solar data received: " + str(lstSolar))
+            #print("Solar data received: " + str(lstSolar))
             
             #Calculate collector flow in period
             lstSolarWaterFlowCount = next((sublist for sublist in lstSolar if sublist[0] == self.solar_flow_SQL), None)
             #print("Solar water flow pulses: ")
             #print(lstSolarWaterFlowCount)
             fltSolarWaterFlow = float(lstSolarWaterFlowCount[1]) * self.solar_flow_pulse_value
-            #print("Solar water flow in period Litres: " + str(fltSolarWaterFlow))
+            #print("Solar pulse value: " + str(self.solar_flow_pulse_value))
+            print("Solar water flow in period Litres: " + str(fltSolarWaterFlow))
             
             for item in lstSolar:
                 if item[0] == self.solar_flow_SQL:
@@ -368,14 +370,14 @@ class Home_BMS:
             #print("Solar Vals: " + str(lstSolarVals))
 
             #heat transferred in period
-            solar_heat_transferred = self.calculate_heat_wh(self.collector_glycol, fltSolarWaterFlow, lstSolarVals[1], lstSolarVals[4])
+            solar_heat_transferred = self.calculate_heat_wh(self.collector_glycol, fltSolarWaterFlow, lstSolarVals[1], lstSolarVals[4]) #lstSolarVals[1] is the collector temperature, lstSolarVals[4] is the bottom of the tank
             lstSolarFields.append(self.collector_heat_load_SQL)
             lstSolarVals.append(solar_heat_transferred)
 
             #Upload solar data to database
             lstSolarArgs = [[self.solar_table], lstSolarFields, lstSolarVals]
             self.DB_upload_data(lstSolarArgs)
-            print("BMS DB uploaded: solar values")
+            #print("BMS DB uploaded: solar values")
 
             #####################################################################################################
             #HP database upload
@@ -419,7 +421,7 @@ class Home_BMS:
             #Upload HP data to database
             lstHPArgs = [[self.HP_table], lstHPFields, lstHPVals]
             self.DB_upload_data(lstHPArgs)
-            print("BMS DB uploaded: HP values")
+            #print("BMS DB uploaded: HP values")
 
             #####################################################################################################
             # PV database upload
@@ -440,7 +442,7 @@ class Home_BMS:
             # Upload PV data to database
             lstPVArgs = [[self.PV_table], lstPVFields, lstPVVals]
             self.DB_upload_data(lstPVArgs)
-            print("BMS DB uploaded: PV values")
+            #print("BMS DB uploaded: PV values")
 
             #####################################################################################################
             # BATTERY database upload
@@ -470,7 +472,7 @@ class Home_BMS:
             # Upload BAT data to database
             lstBATArgs = [[self.BAT_table], lstBATFields, lstBATVals]
             self.DB_upload_data(lstBATArgs)
-            print("BMS DB uploaded: BAT values")
+            #print("BMS DB uploaded: BAT values")
 
             #####################################################################################################
             # ZONES database upload
@@ -482,7 +484,7 @@ class Home_BMS:
             # Upload Zone data to database
             lstZoneArgs = [[self.Zone_table], lstZoneFields, lstZoneVals]
             self.DB_upload_data(lstZoneArgs)
-            print("BMS DB uploaded: Zone values")
+            #print("BMS DB uploaded: Zone values")
 
             #####################
             # UPDATE GUI #
@@ -523,11 +525,11 @@ class Home_BMS:
             #solar hourly flow rate for GUI
             lstSolarFlowQry = [self.solar_table, self.solar_flow_SQL]
             lstFlow_Rate_lstHr = self.last_hour_query(lstSolarFlowQry)
-            #print("lstFlow_Rate_lstHr: " + str(lstFlow_Rate_lstHr))
+            print("lstFlow_Rate_lstHr: " + str(lstFlow_Rate_lstHr))
             Flow_Rate_lstHr = sum(float(item[1]) for item in lstFlow_Rate_lstHr if item[1] is not None)
             lblFlowRate = self.dictInstructions['Solar_Inputs']['GUI_Information']['Flow_Rate']['GUI_Val']
             solar_flow_str = f"{Flow_Rate_lstHr :.{self.dp_0}f}"
-            #print("Solar flow rate: " + str(solar_flow))
+            print("Solar flow rate: " + str(solar_flow_str))
             lblFlowRate.config(text=solar_flow_str)
 
             #solar thermal capacity over previous hour

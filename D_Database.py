@@ -249,7 +249,7 @@ class manage_database:
         field_name = args[3]
 
         query = f"SELECT Time_Stamp, {field_name} FROM {table_name} WHERE Time_Stamp >= '{start_time}' AND Time_Stamp <= '{end_time}'"
-        print(query)
+        #print(query)
         self.c.execute(query)
         records = self.c.fetchall()
         #print("records: " + str(records))
@@ -274,18 +274,18 @@ class manage_database:
         self.DB_initialised = True
         
         while self.status_operate == True:
-            print("DB: waiting for parent requests")
+            #print("DB: waiting for parent requests")
             message = socket.recv()
-            print("Received message: " + str(message))
+            #print("Received message: " + str(message))
             lstRequest = json.loads(message.decode("utf-8"))
             strFunction = lstRequest[0]
-            print("DB receieved function to run from parent: " + str(strFunction))
+            #print("DB receieved function to run from parent: " + str(strFunction))
             lstArgs = lstRequest[1]
-            print("DB arguments reveived for function to run from parent: " + str(lstArgs))
+            #print("DB arguments reveived for function to run from parent: " + str(lstArgs))
             lstReturn = self.call_method(strFunction, lstArgs) #globals()[strFunction](lstArgs)
             serialised_data = json.dumps(lstReturn).encode("utf-8")
-            print("DB: sending response...")
+            #print("DB: sending response...")
             socket.send(serialised_data)
-            print("DB: response sent.")
+            #print("DB: response sent.")
 
 #DB_Test = manage_database(A_Initialise.dictGlobalInstructions, 5556)

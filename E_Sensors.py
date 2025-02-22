@@ -95,7 +95,7 @@ class BMS_Sensors:
         self.continue_to_operate = True
 
         while self.continue_to_operate == True:
-            print("Sensor: waiting for requests")
+            #print("Sensor: waiting for requests")
             self.sensor_server_live = True
             message = socket.recv()
             current_time = time.time()
@@ -107,14 +107,14 @@ class BMS_Sensors:
 
             self.last_request_time = current_time
 
-            print("Received message: " + str(message))
+            #print("Received message: " + str(message))
 
             lstReturn = [elapsed_time]
             lstReturn.append(self.collate_sensors())
             serialised_data = json.dumps(lstReturn).encode("utf-8")
-            print("Sensors: sending response...")
+            #print("Sensors: sending response...")
             socket.send(serialised_data)
-            print("Sensors: response sent.")
+            #print("Sensors: response sent.")
 
             if message == True:
                 self.continue_to_operate = False
@@ -454,7 +454,7 @@ class BMS_Sensors:
             current_state = GPIO.input(GPIO_Pin)
             if last_state == GPIO.HIGH and current_state == GPIO.LOW:
                 self.lstSolarWater.append(1)
-                #print("Pulse from solar hot water")
+                print("Solar hot water pulse meter: " + str(self.lstSolarWater))
             last_state = current_state
             time.sleep(0.01)
 
@@ -467,7 +467,7 @@ class BMS_Sensors:
             current_state = GPIO.input(GPIO_Pin)
             if last_state == GPIO.HIGH and current_state == GPIO.LOW:
                 self.lstSolarElectricity.append(1)
-                #print("Pulse from solar electricity")
+                #print(str(self.lstSolarElectricity))
             last_state = current_state
             time.sleep(0.01)
 
