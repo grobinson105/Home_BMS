@@ -899,9 +899,9 @@ dictHPFlowRateSensor = {'ID': 2,
                         'Pulse_calc_flow_load_dict': None,
                         'Plot_Values?': False,
                         'Plot_Value_List': [],
-                        'Plot_index': None,
-                        'Plot_colour': None,
-                        'Plot_label': None,
+                        'Plot_index': 1,
+                        'Plot_colour': 'red',
+                        'Plot_label': 'flow L/M',
                         'Derived_Val': False}
 
 dictHPThermalCapacity = {'ID': 3,
@@ -1249,6 +1249,50 @@ dict_HP_Graph2_Values = {'include_grid': boolGrid_HP_Graph2,
                                 'frm_title':frm_HP_Graph2_title}
 dict_HP_Graph2_Instructions = {'Dimensions': dict_HP_Graph2_Frame_Dims, 'Values': dict_HP_Graph2_Values}
 
+#HP GRAPH 3
+frm_HP_Graph3_bd = 1
+bx_HP_Graph3_width = frmHPGraphWidth
+bx_HP_Graph3_height = frmHPGraphHeight-40
+bx_HP_Graph3_x0 = 0
+bx_HP_Graph3_y0 = 0
+tm_HP_Graph3_length = 5 #pixel length of the minor tm line
+tm_HP_Graph3_major_length = 10 #pixel length of the major tm line
+tm_HP_Graph3_x_count = 24*2 #Show tickmarks each half hour
+tm_HP_Graph3_x_major = 2 #Show major tm on the hour
+HP_Graph3_x_max = 24 #maximum value of x axis is 24th hour
+HP_Graph3_x_min = 0 #minimum value on the x axis in the 0th hour
+tm_HP_Graph3_y_count = 60 #Maximum on graph assumes no more than 10 hours @ maximum capacity (which would be excessive!)
+tm_HP_Graph3_y_major= 5 #Show major tm for every Wh
+HP_Graph3_y_max = 60 #Maximum wh per day
+HP_Graph3_y_min = 0 #Minimum capacity on y-axisis 0 kWh
+frm_HP_Graph3_title = dt.datetime.now().strftime("%d/%m/%Y")
+boolGrid_HP_Graph3 = True
+HP_Graph3_x_title = 'Time (hour of day)'
+HP_Graph3_y_title = 'Flow Rate (L/M)'
+
+dict_HP_Graph3_Frame_Dims = {'frm_width': frmHPGraphWidth,
+                                'frm_height': frmHPGraphHeight,
+                                'frm_bd': frm_HP_Graph3_bd,
+                                'bx_width': bx_HP_Graph3_width,
+                                'bx_height': bx_HP_Graph3_height,
+                                'bx_x0': bx_HP_Graph3_x0,
+                                'bx_y0': bx_HP_Graph3_y0}
+dict_HP_Graph3_Values = {'include_grid': boolGrid_HP_Graph3,
+                                'graph_x_title': HP_Graph3_x_title,
+                                'graph_x_max': HP_Graph3_x_max,
+                                'graph_x_min': HP_Graph3_x_min,
+                                'graph_y_title': HP_Graph3_y_title,
+                                'graph_y_max': HP_Graph3_y_max,
+                                'graph_y_min': HP_Graph3_y_min,
+                                'tm_length': tm_HP_Graph3_length,
+                                'tm_x_count': tm_HP_Graph3_x_count,
+                                'tm_x_major': tm_HP_Graph3_x_major,
+                                'tm_y_count': tm_HP_Graph3_y_count,
+                                'tm_y_major': tm_HP_Graph3_y_major,
+                                'tm_major_length': tm_HP_Graph3_major_length,
+                                'frm_title':frm_HP_Graph3_title}
+dict_HP_Graph3_Instructions = {'Dimensions': dict_HP_Graph3_Frame_Dims, 'Values': dict_HP_Graph3_Values}
+
 #HEAT PUMP CoP GAUGE
 frm_HP_Gauge_bd = 1
 bx_HP_Gauge_width = frmHPGaugeWidth
@@ -1287,6 +1331,7 @@ dictGlobalHP = {'GUI_Information': dictGlobalHPGUI,
                                 'GUI_params': dictHPGUIParams,
                                 'Graph1_params': dict_HP_Graph1_Instructions,
                                 'Graph2_params': dict_HP_Graph2_Instructions,
+                                'Graph3_params': dict_HP_Graph3_Instructions,
                                 'Gauge_params': dict_HP_Instructions}
 
 #############################################

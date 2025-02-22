@@ -421,9 +421,15 @@ class build_GUI:
                 self.HP_chg_graph_cmd.config(text="GRAPH 2")
 
             if strLabel == "GRAPH 2":
+                self.HP_Graph = cht_plt.GUI_graph(self.dictInstructions['HP_Inputs']['Graph3_params'], self.frmHPGraph)
+                self.HP_Graph.update_graph_title(strDate)
+                self.HP_chg_graph_cmd.config(text="GRAPH 3")
+
+            if strLabel == "GRAPH 3":
                 self.HP_Graph = cht_plt.GUI_graph(self.dictInstructions['HP_Inputs']['Graph1_params'], self.frmHPGraph)
                 self.HP_Graph.update_graph_title(strDate)
                 self.HP_chg_graph_cmd.config(text="GRAPH 1")
+        
 
         strLabel = self.HP_chg_graph_cmd.cget("text")
         if strLabel == "GRAPH 1":
@@ -431,6 +437,9 @@ class build_GUI:
 
         if strLabel == "GRAPH 2":
             self.run_HP_2(lstArgs)
+        
+        if strLabel == "GRAPH 3":
+             self.run_HP_3(lstArgs)               
 
     def run_HP_1(self, lstArgs):
         #Heat Load
@@ -486,6 +495,22 @@ class build_GUI:
         lstArgs = [strDatePrevSQL, strDateCurrSQL, self.HP_table_name, Inlet_Temp]
         #print(lstArgs)
         lstData = self.request_db_data("extract_values", lstArgs)
+        lstVals = self.convert_time_to_minutes(lstData)
+        self.HP_Graph.plot_chart(lstVals, plot_colour, plot_series, plot_name)
+
+    def run_HP_3(self, lstArgs):
+        #HP Flowrate
+        strDatePrevSQL = lstArgs[0]
+        strDateCurrSQL = lstArgs[1]
+
+        HP_Flow_SQL = self.dictInstructions['HP_Inputs']['GUI_Information']['Flow_Rate']['SQL_Title']
+        plot_series = self.dictInstructions['HP_Inputs']['GUI_Information']['Flow_Rate']['Plot_index']
+        plot_colour = self.dictInstructions['HP_Inputs']['GUI_Information']['Flow_Rate']['Plot_colour']
+        plot_name = self.dictInstructions['HP_Inputs']['GUI_Information']['Flow_Rate']['Plot_label']
+        lstArgs = [strDatePrevSQL, strDateCurrSQL, self.HP_table_name, HP_Flow_SQL]
+        #print(lstArgs)
+        lstData = self.request_db_data("extract_values", lstArgs)
+        #print("lstDATA: " + str(lstData))
         lstVals = self.convert_time_to_minutes(lstData)
         self.HP_Graph.plot_chart(lstVals, plot_colour, plot_series, plot_name)
 
