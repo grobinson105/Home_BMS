@@ -19,8 +19,12 @@ boolZone = True             #Set to true if you are monitoring a zoned manifold
 
 #USE A USB FLASHDRIVE. YOU NEED TO MOUNT THE USB CORRECTLY: SEE https://www.raspberrypi-spy.co.uk/2014/05/how-to-mount-a-usb-flash-disk-on-the-raspberry-pi/
 #Location of code on Pi
-dbLoc = "/media/HeatSet_BMS/" #"/mnt/usb/BMS2" #"/media/HeatSet_BMS/" #'C:\\Users\\grobi\\OneDrive\\Documents\\George\\Home Energy Monitoring v2\\v2\\Home_BMS\\'
-fileLoc = "/home/pi/Home_BMS/" #"/home/room1/Home_BMS/" #"/home/pi/Home_BMS/" #'C:\\Users\\grobi\\OneDrive\\Documents\\George\\Home Energy Monitoring v2\\v2\\Home_BMS\\'
+dbLoc = "/media/HeatSet_BMS/" # "/mnt/usb/BMS2" #'C:\\Users\\grobi\\OneDrive\\Documents\\George\\Home Energy Monitoring v2\\v2\\Home_BMS\\'
+fileLoc = "/home/pi/Home_BMS/" #"/home/room1/Home_BMS/" #'C:\\Users\\grobi\\OneDrive\\Documents\\George\\Home Energy Monitoring v2\\v2\\Home_BMS\\'
+
+#Switch-Bot tokens (DO NOT STORE ON GITHUB)
+TOKEN = '' #To get these values navigate to the version in the preferences section of hte app and press on it approximately 10 times
+SECRET = ''
 
 #I2C
 I2C_ADC_Address = 0x08      #No longer used
@@ -159,7 +163,9 @@ dictUser = {'Solar_Thermal': boolSolar,
                         'PV_Max_Output': PVArrayMaxOutputW,
                         'BAT_Voltage_At_Full_Charge': VoltageAtFullCharge,
                         'BAT_Voltage_At_Min_Charge': VoltageAtMinCharge,
-                        'OBEMS': lstObemsHeatSet_GPIOMap}
+                        'OBEMS': lstObemsHeatSet_GPIOMap,
+                        'SwitchBot_Token': TOKEN,
+                        'SwitchBot_Secret': SECRET}
 
 dictTimeStamp = {'SQL_Table': None,
                         'SQL_Title': 'Time Stamp',
@@ -1803,7 +1809,7 @@ dictZone1 = {'ID': 0,
                         'Include?': True,
                         'SQL_Table': strZONESQLTable,
                         'SQL_Title': 'Zone_1A',
-                        'GUI_Label': 'Zone 1: Kitchen',
+                        'GUI_Label': 'Zone 1: Kitchen (DegC)',
                         'GUI_Val': None,
                         'GUI_Default': str(0),
                         'Sensor': True,
@@ -1823,7 +1829,7 @@ dictZone2 = {'ID': 1,
                         'Include?': True,
                         'SQL_Table': strZONESQLTable,
                         'SQL_Title': 'Zone_2',
-                        'GUI_Label': 'Zone 2: Study',
+                        'GUI_Label': 'Zone 2: Study (DegC)',
                         'GUI_Val': None,
                         'GUI_Default': str(0),
                         'Sensor': True,
@@ -1843,7 +1849,7 @@ dictZone3 = {'ID': 2,
                         'Include?': True,
                         'SQL_Table': strZONESQLTable,
                         'SQL_Title': 'Zone_3',
-                        'GUI_Label': 'Zone 3: Front Room',
+                        'GUI_Label': 'Zone 3: Front Room (DegC)',
                         'GUI_Val': None,
                         'GUI_Default': str(0),
                         'Sensor': True,
@@ -1863,7 +1869,7 @@ dictZone4 = {'ID': 3,
                         'Include?': True,
                         'SQL_Table': strZONESQLTable,
                         'SQL_Title': 'Zone_4',
-                        'GUI_Label': 'Zone 4: Radiators',
+                        'GUI_Label': 'Zone 4: Radiators (DegC)',
                         'GUI_Val': None,
                         'GUI_Default': str(0),
                         'Sensor': True,
@@ -1899,14 +1905,93 @@ dictZone5= {'ID': 4,
                         'Plot_colour': 'black',
                         'Plot_label': 'Zone 5'}
 
+dictTempOutside= {'ID': 5,
+                        'Include?': True,
+                        'SQL_Table': strZONESQLTable,
+                        'SQL_Title': 'Outdoor_Temp_C',
+                        'GUI_Label': 'Outdoor Temperature (DegC)',
+                        'GUI_Val': None,
+                        'GUI_Default': str(0),
+                        'Sensor': True,
+                        'Device_Name': 'Outdoors',
+                        'Plot_Values?': True,
+                        'Plot_Value_List': [],
+                        'Plot_index': 1,
+                        'Plot_colour': 'blue',
+                        'Plot_label': 'Outdoor'}
+
+dictTempZone1= {'ID': 6,
+                        'Include?': True,
+                        'SQL_Table': strZONESQLTable,
+                        'SQL_Title': 'Zone1_Temp_C',
+                        'GUI_Label': 'Zone 1: Kitchen',
+                        'GUI_Val': None,
+                        'GUI_Default': str(0),
+                        'Sensor': True,
+                        'Device_Name': 'Zone1',
+                        'Plot_Values?': True,
+                        'Plot_Value_List': [],
+                        'Plot_index': 2,
+                        'Plot_colour': 'red',
+                        'Plot_label': 'Zone1'}
+
+dictTempZone2= {'ID': 7,
+                        'Include?': True,
+                        'SQL_Table': strZONESQLTable,
+                        'SQL_Title': 'Zone2_Temp_C',
+                        'GUI_Label': 'Zone 2: Study',
+                        'GUI_Val': None,
+                        'GUI_Default': str(0),
+                        'Sensor': True,
+                        'Device_Name': 'Zone2',
+                        'Plot_Values?': True,
+                        'Plot_Value_List': [],
+                        'Plot_index': 3,
+                        'Plot_colour': 'green',
+                        'Plot_label': 'Zone2'}
+
+dictTempZone3= {'ID': 8,
+                        'Include?': True,
+                        'SQL_Table': strZONESQLTable,
+                        'SQL_Title': 'Zone3_Temp_C',
+                        'GUI_Label': 'Zone 3: Front Room',
+                        'GUI_Val': None,
+                        'GUI_Default': str(0),
+                        'Sensor': True,
+                        'Device_Name': 'Zone3',
+                        'Plot_Values?': True,
+                        'Plot_Value_List': [],
+                        'Plot_index': 4,
+                        'Plot_colour': 'black',
+                        'Plot_label': 'Zone3'}
+
+dictTempZone4= {'ID': 9,
+                        'Include?': True,
+                        'SQL_Table': strZONESQLTable,
+                        'SQL_Title': 'Zone4_Temp_C',
+                        'GUI_Label': 'Zone 4: Radiators',
+                        'GUI_Val': None,
+                        'GUI_Default': str(0),
+                        'Sensor': True,
+                        'Device_Name': 'Zone4',
+                        'Plot_Values?': True,
+                        'Plot_Value_List': [],
+                        'Plot_index': 5,
+                        'Plot_colour': 'purple',
+                        'Plot_label': 'Zone4'}
 
 dictGlobalZONEGUI = {'Zone_1': dictZone1,
                         'Zone_2': dictZone2,
                         'Zone_3': dictZone3,
                         'Zone_4': dictZone4,
-                        'Zone_5': dictZone5}
+                        'Zone_5': dictZone5,
+                        'Outdoor_Temp': dictTempOutside,
+                        'Zone1_Temp': dictTempZone1,
+                        'Zone2_Temp': dictTempZone2,
+                        'Zone3_Temp': dictTempZone3,
+                        'Zone4_Temp': dictTempZone4}
 
-lstGUIZONESensorNoADJ = [0, 1, 2, 3, 4] #Measured values on the GUI so not adjusted by the user
+lstGUIZONESensorNoADJ = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9] #Measured values on the GUI so not adjusted by the user
 lstGUIZONESections = [lstGUIZONESensorNoADJ]
 
 #ZONE TAB SIZING
@@ -1986,6 +2071,50 @@ dict_ZONE_Graph_Values = {'include_grid': boolGrid_ZONE_Graph,
                                 'frm_title':frm_ZONE_Graph_title}
 dict_ZONE_Graph_Instructions = {'Dimensions': dict_ZONE_Graph_Frame_Dims, 'Values': dict_ZONE_Graph_Values}
 
+#ZONE GRAPH2
+frm_ZONE_Graph2_bd = 1
+bx_ZONE_Graph2_width = frmZONEGraphWidth
+bx_ZONE_Graph2_height = frmZONEGraphHeight-40
+bx_ZONE_Graph2_x0 = 0
+bx_ZONE_Graph2_y0 = 0
+tm_ZONE_Graph2_length = 5 #pixel length of the minor tm line
+tm_ZONE_Graph2_major_length = 10 #pixel length of the major tm line
+tm_ZONE_Graph2_x_count = 24*2 #Show tickmarks each half hour
+tm_ZONE_Graph2_x_major = 2 #Show major tm on the hour
+ZONE_Graph2_x_max = 24 #maximum value of x axis is 24th hour
+ZONE_Graph2_x_min = 0 #minimum value on the x axis in the 0th hour
+tm_ZONE_Graph2_y_count = 25 #One for each zone
+tm_ZONE_Graph2_y_major= 1 #Show major tm for each zone
+ZONE_Graph2_y_max = 25  #One for each zone
+ZONE_Graph2_y_min = 0 #0 referring to off position for any given zone
+frm_ZONE_Graph2_title = dt.datetime.now().strftime("%d/%m/%Y")
+boolGrid_ZONE2_Graph = True
+ZONE_Graph2_x_title = 'Time (hour of day)'
+ZONE_Graph2_y_title = 'Zone Temperatures (DegC)'
+
+dict_ZONE_Graph2_Frame_Dims = {'frm_width': frmZONEGraphWidth,
+                                'frm_height': frmZONEGraphHeight,
+                                'frm_bd': frm_ZONE_Graph2_bd,
+                                'bx_width': bx_ZONE_Graph2_width,
+                                'bx_height': bx_ZONE_Graph2_height,
+                                'bx_x0': bx_ZONE_Graph2_x0,
+                                'bx_y0': bx_ZONE_Graph2_y0}
+dict_ZONE_Graph2_Values = {'include_grid': boolGrid_ZONE2_Graph,
+                                'graph_x_title': ZONE_Graph2_x_title,
+                                'graph_x_max': ZONE_Graph2_x_max,
+                                'graph_x_min': ZONE_Graph2_x_min,
+                                'graph_y_title': ZONE_Graph2_y_title,
+                                'graph_y_max': ZONE_Graph2_y_max,
+                                'graph_y_min': ZONE_Graph2_y_min,
+                                'tm_length': tm_ZONE_Graph2_length,
+                                'tm_x_count': tm_ZONE_Graph2_x_count,
+                                'tm_x_major': tm_ZONE_Graph2_x_major,
+                                'tm_y_count': tm_ZONE_Graph2_y_count,
+                                'tm_y_major': tm_ZONE_Graph2_y_major,
+                                'tm_major_length': tm_ZONE_Graph2_major_length,
+                                'frm_title':frm_ZONE_Graph2_title}
+dict_ZONE_Graph2_Instructions = {'Dimensions': dict_ZONE_Graph2_Frame_Dims, 'Values': dict_ZONE_Graph2_Values}
+
 #ZONE Array GAUGE
 frm_ZONE_Gauge_bd = 11
 bx_ZONE_Gauge_width = frmZONEGaugeWidth
@@ -2022,7 +2151,8 @@ dictGlobalZONE = {'GUI_Information': dictGlobalZONEGUI,
                                 'GUI_Commands': None,
                                 'Defaults': dictZONEDefaults,
                                 'GUI_params': dictZONEGUIParams,
-                                'Graph_params': dict_ZONE_Graph_Instructions,
+                                'Graph1_params': dict_ZONE_Graph_Instructions,
+                                'Graph2_params': dict_ZONE_Graph2_Instructions,
                                 'Gauge_params': dict_ZONE_Instructions}
 
 

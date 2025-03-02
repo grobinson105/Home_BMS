@@ -21,6 +21,7 @@ class Home_BMS:
         self.sensor_server_live = False
         self.dictInstructions = A_Initialise.dictGlobalInstructions
         self.dp_2 = 2
+        self.dp_1 = 1
         self.dp_0 = 0
         
         self.solar_table =  self.dictInstructions['Solar_Inputs']['Defaults']['Database_Table_Name']
@@ -746,7 +747,13 @@ class Home_BMS:
                 lblZone1.config(text="ON")
             else:
                 lblZone1.config(text="OFF")
-
+            
+            lblZ1Temp = self.dictInstructions['ZONE_Inputs']['GUI_Information']['Zone1_Temp']['GUI_Val']
+            Z1Temp = lstZoneVals[4]
+            Z1Temp_str = f"{Z1Temp:.{self.dp_1}f}"
+            # print("Z1 temp: " + str(HP_outlet_temp))
+            lblZ1Temp.config(text=Z1Temp_str)
+            
             # Zone 2
             lblZone2 = self.dictInstructions['ZONE_Inputs']['GUI_Information']['Zone_2']['GUI_Val']
             Zone2On = lstZoneVals[1]
@@ -754,6 +761,12 @@ class Home_BMS:
                 lblZone2.config(text="ON")
             else:
                 lblZone2.config(text="OFF")
+
+            lblZ2Temp = self.dictInstructions['ZONE_Inputs']['GUI_Information']['Zone2_Temp']['GUI_Val']
+            Z2Temp = lstZoneVals[5]
+            Z2Temp_str = f"{Z2Temp:.{self.dp_1}f}"
+            # print("Z2 temp: " + str(HP_outlet_temp))
+            lblZ2Temp.config(text=Z2Temp_str)
 
             # Zone 3
             lblZone3 = self.dictInstructions['ZONE_Inputs']['GUI_Information']['Zone_3']['GUI_Val']
@@ -763,6 +776,12 @@ class Home_BMS:
             else:
                 lblZone3.config(text="OFF")
 
+            lblZ3Temp = self.dictInstructions['ZONE_Inputs']['GUI_Information']['Zone3_Temp']['GUI_Val']
+            Z3Temp = lstZoneVals[6]
+            Z3Temp_str = f"{Z3Temp:.{self.dp_1}f}"
+            # print("Z3 temp: " + str(HP_outlet_temp))
+            lblZ3Temp.config(text=Z3Temp_str)
+
             # Zone 4
             lblZone4 = self.dictInstructions['ZONE_Inputs']['GUI_Information']['Zone_4']['GUI_Val']
             Zone4On = lstZoneVals[3]
@@ -770,6 +789,19 @@ class Home_BMS:
                 lblZone4.config(text="ON")
             else:
                 lblZone4.config(text="OFF")
+            
+            lblZ4Temp = self.dictInstructions['ZONE_Inputs']['GUI_Information']['Zone4_Temp']['GUI_Val']
+            Z4Temp = lstZoneVals[7]
+            Z4Temp_str = f"{Z4Temp:.{self.dp_1}f}"
+            # print("Z4 temp: " + str(HP_outlet_temp))
+            lblZ4Temp.config(text=Z4Temp_str)
+            
+            #Outdoor temperature
+            lblOutdoorTemp = self.dictInstructions['ZONE_Inputs']['GUI_Information']['Outdoor_Temp']['GUI_Val']
+            OutdoorTemp = lstZoneVals[8]
+            OutdoorTemp_str = f"{OutdoorTemp:.{self.dp_1}f}"
+            # print("Z4 temp: " + str(HP_outlet_temp))
+            lblOutdoorTemp.config(text=OutdoorTemp_str)
 
             self.BMS_GUI.current_ZONE()
 

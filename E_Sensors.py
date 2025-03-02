@@ -6,6 +6,12 @@ import threading
 import RPi.GPIO as GPIO
 import json
 import math as math
+import requests
+import time
+import uuid
+import hashlib
+import hmac
+import base64
 
 class BMS_Sensors:
     def __init__(self, port):
@@ -46,7 +52,12 @@ class BMS_Sensors:
         self.Zone2_SQL = self.dictInstructions['ZONE_Inputs']['GUI_Information']['Zone_2']['SQL_Title']
         self.Zone3_SQL = self.dictInstructions['ZONE_Inputs']['GUI_Information']['Zone_3']['SQL_Title']
         self.Zone4_SQL = self.dictInstructions['ZONE_Inputs']['GUI_Information']['Zone_4']['SQL_Title']
-
+        self.Zone1Temp_SQL = self.dictInstructions['ZONE_Inputs']['GUI_Information']['Zone1_Temp']['SQL_Title']
+        self.Zone2Temp_SQL = self.dictInstructions['ZONE_Inputs']['GUI_Information']['Zone2_Temp']['SQL_Title']
+        self.Zone3Temp_SQL = self.dictInstructions['ZONE_Inputs']['GUI_Information']['Zone3_Temp']['SQL_Title']
+        self.Zone4Temp_SQL = self.dictInstructions['ZONE_Inputs']['GUI_Information']['Zone4_Temp']['SQL_Title']
+        self.OutdoorTemp_SQL = self.dictInstructions['ZONE_Inputs']['GUI_Information']['Outdoor_Temp']['SQL_Title']
+        
         self.restart_threads()
         
 
@@ -126,7 +137,7 @@ class BMS_Sensors:
         else:
             avZone1 = 0
         self.lstZone1Reading = []
-
+        
         # Zone2 sensor
         if len(self.lstZone2Reading) != 0:
             avZone2 = sum(self.lstZone2Reading) / len(self.lstZone2Reading)
@@ -148,10 +159,22 @@ class BMS_Sensors:
             avZone4 = 0
         self.lstZone4Reading = []
 
+        #Temperature
+        Z1_Temp = self.switch_bot(self.dictInstructions['ZONE_Inputs']['GUI_Information']['Zone1_Temp']['Device_Name'])
+        Z2_Temp = self.switch_bot(self.dictInstructions['ZONE_Inputs']['GUI_Information']['Zone2_Temp']['Device_Name'])
+        Z3_Temp = self.switch_bot(self.dictInstructions['ZONE_Inputs']['GUI_Information']['Zone3_Temp']['Device_Name'])
+        Z4_Temp = self.switch_bot(self.dictInstructions['ZONE_Inputs']['GUI_Information']['Zone4_Temp']['Device_Name'])
+        Outdoor_Temp = self.switch_bot(self.dictInstructions['ZONE_Inputs']['GUI_Information']['Outdoor_Temp']['Device_Name'])
+        
         self.dictZoneData = [[self.Zone1_SQL, avZone1],
                                 [self.Zone2_SQL, avZone2],
                                 [self.Zone3_SQL, avZone3],
-                                [self.Zone4_SQL, avZone4]]
+                                [self.Zone4_SQL, avZone4],
+                                [self.Zone1Temp_SQL, Z1_Temp],
+                                [self.Zone2Temp_SQL, Z2_Temp],
+                                [self.Zone3Temp_SQL, Z3_Temp],
+                                [self.Zone4Temp_SQL, Z4_Temp],
+                                [self.OutdoorTemp_SQL, Outdoor_Temp]]
 
         self.Zone_sensors_collated = True
 
@@ -403,6 +426,63 @@ class BMS_Sensors:
             return 1  # The graph will plot a straight line against each zone
         else:
             return 0
+
+    def switch_bot(self, strDevice):
+        # SwitchBot API credentials
+        TOKEN = self.dictInstructions['User_Inputs']['SwitchBot_Token']
+        SECRET = self.dictInstructions['User_Inputs']['SwitchBot_Secret'] 
+        DEVICE_NAME = strDevice # Change this to your Meter's name
+
+        # Generate headers for authentication
+        nonce = str(uuid.uuid4())
+        t = int(round(time.time() * 1000))
+        string_to_sign = '{}{}{}'.format(TOKEN, t, nonce)
+        sign = base64.b64encode(hmac.new(bytes(SECRET, 'utf-8'), bytes(string_to_sign, 'utf-8'), digestmod=hashlib.sha256).digest())
+
+        headers = {
+            'Authorization': TOKEN,
+            't': str(t),
+            'sign': sign,
+            'nonce': nonce
+        }
+
+        # Get list of devices
+        response = requests.get('https://api.switch-bot.com/v1.1/devices', headers=headers)
+
+        if response.status_code == 200:
+            try:
+                devices = response.json()
+                #print("Full API Response:", devices) # Debugging: Print full response
+
+                if 'body' in devices and 'deviceList' in devices['body']:
+                    meter_device = next((device for device in devices['body']['deviceList'] if device['deviceName'] == DEVICE_NAME), None)
+                    
+                    if meter_device:
+                        device_id = meter_device['deviceId']
+                        #print(f"Found device '{DEVICE_NAME}' with ID: {device_id}")
+
+                        # Fetch temperature data
+                        status_response = requests.get(f'https://api.switch-bot.com/v1.1/devices/{device_id}/status', headers=headers)
+                        
+                        if status_response.status_code == 200:
+                            data = status_response.json()
+                            temperature = data['body'].get('temperature')
+                            humidity = data['body'].get('humidity')
+                            #print(f"Temperature: {temperature}°C, Humidity: {humidity}%")
+                        else:
+                            print(f"Failed to retrieve temperature: {status_response.status_code} - {status_response.text}")
+                    else:
+                        print(f"Device '{DEVICE_NAME}' not found.")
+                else:
+                    print("Error: 'deviceList' not found in API response.")
+            except Exception as e:
+                print(f"Error processing API response: {e}")
+                temperature = -999
+        else:
+            print(f"Failed to retrieve device list: {response.status_code} - {response.text}")
+            temperature = -999
+                
+        return temperature
 
     def pressure_sensor_read_thread(self):
         self.lstPressureReading = []

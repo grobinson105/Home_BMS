@@ -176,7 +176,7 @@ class build_GUI:
         strDatePrevSQL = self.convert_SQL_date(dtDatePrev)
         strDateCurrSQL = self.convert_SQL_date(dtDate)
         self.Zone_Graph.update_graph_title(dt.datetime.strftime(dtDatePrev, "%d/%m/%Y", ))
-        self.run_Zone(strDatePrevSQL, strDateCurrSQL)
+        self.run_Zone(strDatePrevSQL, strDateCurrSQL, False)
 
     def next_Zone(self):
         strDate = self.Zone_Graph.return_title()
@@ -189,7 +189,7 @@ class build_GUI:
         strDateNextSQL = self.convert_SQL_date(dtDateNext1)
         strDateCurrSQL = self.convert_SQL_date(dtDateNext)
         self.Zone_Graph.update_graph_title(dt.datetime.strftime(dtDateNext, "%d/%m/%Y", ))
-        self.run_Zone(strDateCurrSQL, strDateNextSQL)
+        self.run_Zone(strDateCurrSQL, strDateNextSQL, False)
 
     def previous_HP(self):
         strDate = self.HP_Graph.return_title()
@@ -237,7 +237,7 @@ class build_GUI:
         strDatePrevSQL = self.convert_SQL_date(dtDate)
         strDateCurrSQL = self.convert_SQL_date(dtDateNext)
         self.Zone_Graph.update_graph_title(dt.datetime.strftime(dtDate, "%d/%m/%Y", ))
-        self.run_Zone(strDatePrevSQL, strDateCurrSQL)
+        self.run_Zone(strDatePrevSQL, strDateCurrSQL, False)
 
     def reset_PV(self):
         #print(strDate)
@@ -346,7 +346,7 @@ class build_GUI:
 
         strDatePrevSQL = self.convert_SQL_date(dtDate)
         strDateCurrSQL = self.convert_SQL_date(dtDateNext)
-        self.run_Zone(strDatePrevSQL, strDateCurrSQL)
+        self.run_Zone(strDatePrevSQL, strDateCurrSQL, False)
 
     def run_solar(self, strDatePrevSQL, strDateCurrSQL, bool_chg):
         strLabel = self.Solar_chg_graph_cmd.cget("text")
@@ -605,7 +605,50 @@ class build_GUI:
         lstVals = self.convert_time_to_minutes_and_sum_all(lstData)
         self.BAT_Graph.plot_chart(lstVals, plot_colour, plot_series, plot_name)
 
-    def run_Zone(self, strDatePrevSQL, strDateCurrSQL):
+    def run_Zone(self, strDatePrevSQL, strDateCurrSQL, bool_chg):
+        strLabel = self.Zone_chg_graph_cmd.cget("text")
+        lstArgs = [strDatePrevSQL, strDateCurrSQL]
+
+        #print("CHANGING GRAPH: " + str(bool_chg))
+
+        if bool_chg == True:
+            strDate = self.Zone_Graph.return_title()
+            self.frmZoneGraph.destroy()
+            self.frmZoneGraph = tk.Frame(self.ZONE_Tab, pady=5, padx=5, highlightbackground="black",
+                                       highlightcolor="black",
+                                       highlightthickness=1)
+            # frmSolarGraph.bind('<Button>',cmd_lightUp)
+            self.frmZoneGraph.pack()
+            self.frmZoneGraph.place(y=self.dictInstructions['ZONE_Inputs']['GUI_params']['Graph_Section']['Graph_y'],
+                                  x=self.dictInstructions['ZONE_Inputs']['GUI_params']['Graph_Section']['Graph_x'],
+                                  height=self.dictInstructions['ZONE_Inputs']['GUI_params']['Graph_Section'][
+                                      'GraphFm_height'],
+                                  width=self.dictInstructions['ZONE_Inputs']['GUI_params']['Graph_Section'][
+                                      'GraphFm_width'])
+
+            if strLabel == "GRAPH 1":
+                self.Zone_Graph = cht_plt.GUI_graph(self.dictInstructions['ZONE_Inputs']['Graph2_params'],
+                                                    self.frmZoneGraph)
+                self.Zone_Graph.update_graph_title(strDate)
+                self.Zone_chg_graph_cmd.config(text="GRAPH 2")
+
+            if strLabel == "GRAPH 2":
+                self.Zone_Graph = cht_plt.GUI_graph(self.dictInstructions['ZONE_Inputs']['Graph1_params'], self.frmZoneGraph)
+                self.Zone_Graph.update_graph_title(strDate)
+                self.Zone_chg_graph_cmd.config(text="GRAPH 1")
+
+        strLabel = self.Zone_chg_graph_cmd.cget("text")
+        if strLabel == "GRAPH 1":
+            self.run_zone_1(lstArgs)
+
+        if strLabel == "GRAPH 2":
+            self.run_zone_2(lstArgs)
+
+    def run_zone_1(self, lstArgs):
+
+        strDatePrevSQL = lstArgs[0]
+        strDateCurrSQL = lstArgs[1]
+
         #Zone 1
         Zone_Field = self.dictInstructions['ZONE_Inputs']['GUI_Information']['Zone_1']['SQL_Title']
         plot_colour = self.dictInstructions['ZONE_Inputs']['GUI_Information']['Zone_1']['Plot_colour']
@@ -650,6 +693,66 @@ class build_GUI:
         lstVals = self.convert_time_to_minutes_zones(lstData, 4)
         self.Zone_Graph.plot_chart(lstVals, plot_colour, plot_series, plot_name)
 
+    def run_zone_2(self, lstArgs):
+
+        strDatePrevSQL = lstArgs[0]
+        strDateCurrSQL = lstArgs[1]
+
+        #Outdoors
+        Zone_Field = self.dictInstructions['ZONE_Inputs']['GUI_Information']['Outdoor_Temp']['SQL_Title']
+        plot_colour = self.dictInstructions['ZONE_Inputs']['GUI_Information']['Outdoor_Temp']['Plot_colour']
+        plot_series = self.dictInstructions['ZONE_Inputs']['GUI_Information']['Outdoor_Temp']['Plot_index']
+        plot_name = self.dictInstructions['ZONE_Inputs']['GUI_Information']['Outdoor_Temp']['Plot_label']
+        lstArgs = [strDatePrevSQL, strDateCurrSQL, self.Zone_table_name, Zone_Field]
+        #print(lstArgs)
+        lstData = self.request_db_data("extract_values", lstArgs)
+        lstVals = self.convert_time_to_minutes(lstData)
+        self.Zone_Graph.plot_chart(lstVals, plot_colour, plot_series, plot_name)        
+        
+        #Zone 1
+        Zone_Field = self.dictInstructions['ZONE_Inputs']['GUI_Information']['Zone1_Temp']['SQL_Title']
+        plot_colour = self.dictInstructions['ZONE_Inputs']['GUI_Information']['Zone1_Temp']['Plot_colour']
+        plot_series = self.dictInstructions['ZONE_Inputs']['GUI_Information']['Zone1_Temp']['Plot_index']
+        plot_name = self.dictInstructions['ZONE_Inputs']['GUI_Information']['Zone1_Temp']['Plot_label']
+        lstArgs = [strDatePrevSQL, strDateCurrSQL, self.Zone_table_name, Zone_Field]
+        #print(lstArgs)
+        lstData = self.request_db_data("extract_values", lstArgs)
+        lstVals = self.convert_time_to_minutes(lstData)
+        self.Zone_Graph.plot_chart(lstVals, plot_colour, plot_series, plot_name)
+
+        #Zone 2
+        Zone_Field = self.dictInstructions['ZONE_Inputs']['GUI_Information']['Zone2_Temp']['SQL_Title']
+        plot_colour = self.dictInstructions['ZONE_Inputs']['GUI_Information']['Zone2_Temp']['Plot_colour']
+        plot_series = self.dictInstructions['ZONE_Inputs']['GUI_Information']['Zone2_Temp']['Plot_index']
+        plot_name = self.dictInstructions['ZONE_Inputs']['GUI_Information']['Zone2_Temp']['Plot_label']
+        lstArgs = [strDatePrevSQL, strDateCurrSQL, self.Zone_table_name, Zone_Field]
+        #print(lstArgs)
+        lstData = self.request_db_data("extract_values", lstArgs)
+        lstVals = self.convert_time_to_minutes(lstData)
+        self.Zone_Graph.plot_chart(lstVals, plot_colour, plot_series, plot_name)
+
+        #Zone 3
+        Zone_Field = self.dictInstructions['ZONE_Inputs']['GUI_Information']['Zone3_Temp']['SQL_Title']
+        plot_colour = self.dictInstructions['ZONE_Inputs']['GUI_Information']['Zone3_Temp']['Plot_colour']
+        plot_series = self.dictInstructions['ZONE_Inputs']['GUI_Information']['Zone3_Temp']['Plot_index']
+        plot_name = self.dictInstructions['ZONE_Inputs']['GUI_Information']['Zone3_Temp']['Plot_label']
+        lstArgs = [strDatePrevSQL, strDateCurrSQL, self.Zone_table_name, Zone_Field]
+        #print(lstArgs)
+        lstData = self.request_db_data("extract_values", lstArgs)
+        lstVals = self.convert_time_to_minutes(lstData)
+        self.Zone_Graph.plot_chart(lstVals, plot_colour, plot_series, plot_name)
+
+        #Zone 4
+        Zone_Field = self.dictInstructions['ZONE_Inputs']['GUI_Information']['Zone4_Temp']['SQL_Title']
+        plot_colour = self.dictInstructions['ZONE_Inputs']['GUI_Information']['Zone4_Temp']['Plot_colour']
+        plot_series = self.dictInstructions['ZONE_Inputs']['GUI_Information']['Zone4_Temp']['Plot_index']
+        plot_name = self.dictInstructions['ZONE_Inputs']['GUI_Information']['Zone4_Temp']['Plot_label']
+        lstArgs = [strDatePrevSQL, strDateCurrSQL, self.Zone_table_name, Zone_Field]
+        #print(lstArgs)
+        lstData = self.request_db_data("extract_values", lstArgs)
+        lstVals = self.convert_time_to_minutes(lstData)
+        self.Zone_Graph.plot_chart(lstVals, plot_colour, plot_series, plot_name)
+
     def restart_GUI(self):
         ### RESET DEFAULTS
         self.quit_sys = True
@@ -679,6 +782,17 @@ class build_GUI:
         strDateNextSQL = self.convert_SQL_date(dtDateNext)
         strDateCurrSQL = self.convert_SQL_date(dtDate)
         self.run_solar(strDateCurrSQL, strDateNextSQL, True)
+
+    def change_zone_chart(self):
+        strDate = self.Zone_Graph.return_title()
+        dtDate = dt.datetime.strptime(strDate, "%d/%m/%Y")
+        dtDateNext = dtDate + dt.timedelta(days=1)
+        if dtDateNext == dt.datetime.now():
+            self.Date_Zone_Next_Cmd.pack_forget()
+
+        strDateNextSQL = self.convert_SQL_date(dtDateNext)
+        strDateCurrSQL = self.convert_SQL_date(dtDate)
+        self.run_Zone(strDateCurrSQL, strDateNextSQL, True)
 
     def create_master_window(self, dictInstructions):
         self.RootWin.wm_title("HEATSET: Home Energy Management System")
@@ -1660,7 +1774,7 @@ class build_GUI:
         for key in dictInstructions['ZONE_Inputs']['GUI_Information']:
             for i in range(0, len(self.lstZoneSensOrderByID)):
                 if dictInstructions['ZONE_Inputs']['GUI_Information'][key]['ID'] == self.lstZoneSensOrderByID[i]:
-                    if dictInstructions['ZONE_Inputs']['GUI_Information'][key]['Include?'] == True:
+                    if dictInstructions['ZONE_Inputs']['GUI_Information'][key]['Include?'] == True and i < 6:
                         SensCounter += 1
 
         self.dblZoneSensHeight = int((self.frmZoneSensorHeight - 10) / SensCounter)
@@ -1708,51 +1822,103 @@ class build_GUI:
                                            command=self.reset_Zone)
         self.Date_Zone_Reset_Cmd.place(y=1,
                                      x=dictInstructions['ZONE_Inputs']['GUI_params']['Graph_Section'][
-                                           'GraphFm_width'] / 2 - 40,
+                                           'GraphFm_width'] / 2 - 70,
                                      height=20 * dictInstructions['General_Inputs']['Height_ADJ'],
                                      width=50 * dictInstructions['General_Inputs']['Width_ADJ'])
 
+        self.Zone_chg_graph_cmd = tk.Button(self.frmZoneGraphButton,
+                                       text="GRAPH 1",
+                                       font=(dictInstructions['General_Inputs']['Font'],
+                                             dictInstructions['General_Inputs']['Font_size']),
+                                       command=self.change_zone_chart)
+        self.Zone_chg_graph_cmd.place(y=1,
+                                 x=dictInstructions['ZONE_Inputs']['GUI_params']['Graph_Section'][
+                                           'GraphFm_width']/2 + 20,
+                                 height=20 * dictInstructions['General_Inputs']['Height_ADJ'],
+                                 width=70 * dictInstructions['General_Inputs']['Width_ADJ'])
+
         SensCounter = 0
         # Create sensor section labels and outputs and update global dictionary
-        for i in range(0,
-                       len(self.lstZoneSensOrderByID)):  #Loop through all of the global library lists as calibrated within System_Initialize
-            boolContinue = False
+        for i in range(0, len(self.lstZoneSensOrderByID)):  #Loop through all of the global library lists as calibrated within System_Initialize
             for key in dictInstructions['ZONE_Inputs']['GUI_Information']:
-                if boolContinue == True:
-                    continue
-                if dictInstructions['ZONE_Inputs']['GUI_Information'][key]['ID'] == self.lstZoneSensOrderByID[
-                    i]:  #if the ID of the library item
-                    if dictInstructions['ZONE_Inputs']['GUI_Information'][key]['Include?'] == True:
-                        lblTitle = tk.Label(self.frmZoneSensors,
-                                            text=dictInstructions['ZONE_Inputs']['GUI_Information'][key]['GUI_Label'],
-                                            font=(dictInstructions['General_Inputs']['Font'],
-                                                  dictInstructions['General_Inputs']['Font_size']),
-                                            anchor="w")  #This is the label that provides the description to the value
-                        #lblTitle.bind('<Button>', cmd_lightUp)
-                        lblTitle.place(y=(self.dblZoneSensHeight * SensCounter),
-                                       x=5,
-                                       height=self.dblZoneSensHeight,
-                                       width=self.dblZoneSensWidthLBL)
-                        lblVal = tk.Label(self.frmZoneSensors,
-                                          text=dictInstructions['ZONE_Inputs']['GUI_Information'][key]['GUI_Default'],
-                                          font=(dictInstructions['General_Inputs']['Font'],
-                                                dictInstructions['General_Inputs']['Font_size']),
-                                          relief="sunken")
-                        #lblVal.bind('<Button>', cmd_lightUp)
-                        lblVal.place(y=(self.dblZoneSensHeight * SensCounter),
-                                     x=self.dblZoneSensWidthLBL,
-                                     height=self.dblZoneSensHeight,
-                                     width=self.dblZoneSensWidthVal)
-                        dictInstructions['ZONE_Inputs']['GUI_Information'][key][
-                            'GUI_Val'] = lblVal  # Local level insturctions
-                        dictGlobalInstructions['ZONE_Inputs']['GUI_Information'][key][
-                            'GUI_Val'] = lblVal  # Module level instructions
-                        boolContinue = True
-                        SensCounter += 1
-                        continue
+                if dictInstructions['ZONE_Inputs']['GUI_Information'][key]['ID'] == self.lstZoneSensOrderByID[i]:  #if the ID of the library item
+                        if dictInstructions['ZONE_Inputs']['GUI_Information'][key]['Include?'] == True:
+                                if i < 5:
+                                        lblTitle = tk.Label(self.frmZoneSensors,
+                                                            text=dictInstructions['ZONE_Inputs']['GUI_Information'][key]['GUI_Label'],
+                                                            font=(dictInstructions['General_Inputs']['Font'],
+                                                                  dictInstructions['General_Inputs']['Font_size']),
+                                                            anchor="w")  #This is the label that provides the description to the value
+                                        #lblTitle.bind('<Button>', cmd_lightUp)
+                                        lblTitle.place(y=(self.dblZoneSensHeight * SensCounter),
+                                                       x=5,
+                                                       height=self.dblZoneSensHeight,
+                                                       width=self.dblZoneSensWidthLBL)
+                                        lblVal = tk.Label(self.frmZoneSensors,
+                                                          text=dictInstructions['ZONE_Inputs']['GUI_Information'][key]['GUI_Default'],
+                                                          font=(dictInstructions['General_Inputs']['Font'],
+                                                                dictInstructions['General_Inputs']['Font_size']),
+                                                          relief="sunken")
+                                        #lblVal.bind('<Button>', cmd_lightUp)
+                                        lblVal.place(y=(self.dblZoneSensHeight * SensCounter),
+                                                     x=self.dblZoneSensWidthLBL,
+                                                     height=self.dblZoneSensHeight,
+                                                     width=self.dblZoneSensWidthVal/2)
+                                        dictInstructions['ZONE_Inputs']['GUI_Information'][key]['GUI_Val'] = lblVal  # Local level insturctions
+                                        dictGlobalInstructions['ZONE_Inputs']['GUI_Information'][key]['GUI_Val'] = lblVal  # Module level instructions
+                                        SensCounter += 1
+
+                                if i == 5: #Outdoor temperature
+                                        lblTitle = tk.Label(self.frmZoneSensors,
+                                                            text=dictInstructions['ZONE_Inputs']['GUI_Information'][key]['GUI_Label'],
+                                                            font=(dictInstructions['General_Inputs']['Font'],
+                                                                  dictInstructions['General_Inputs']['Font_size']),
+                                                            anchor="w")  #This is the label that provides the description to the value
+                                        #lblTitle.bind('<Button>', cmd_lightUp)
+                                        lblTitle.place(y=(self.dblZoneSensHeight * SensCounter),
+                                                       x=5,
+                                                       height=self.dblZoneSensHeight,
+                                                       width=self.dblZoneSensWidthLBL)
+                                        lblVal = tk.Label(self.frmZoneSensors,
+                                                          text=dictInstructions['ZONE_Inputs']['GUI_Information'][key]['GUI_Default'],
+                                                          font=(dictInstructions['General_Inputs']['Font'],
+                                                                dictInstructions['General_Inputs']['Font_size']),
+                                                          relief="sunken")
+                                        #lblVal.bind('<Button>', cmd_lightUp)
+                                        lblVal.place(y=(self.dblZoneSensHeight * SensCounter),
+                                                     x=(self.dblZoneSensWidthLBL + self.dblZoneSensWidthVal/2),
+                                                     height=self.dblZoneSensHeight,
+                                                     width=self.dblZoneSensWidthVal/2)
+                                        dictInstructions['ZONE_Inputs']['GUI_Information'][key]['GUI_Val'] = lblVal  # Local level insturctions
+                                        dictGlobalInstructions['ZONE_Inputs']['GUI_Information'][key]['GUI_Val'] = lblVal  # Module level instructions
+                                        SensCounter += 1
+                                        
+                                if i > 5:
+                                        #lblTitle = tk.Label(self.frmZoneSensors,
+                                        #                    text=dictInstructions['ZONE_Inputs']['GUI_Information'][key]['GUI_Label'],
+                                        #                    font=(dictInstructions['General_Inputs']['Font'],
+                                        #                          dictInstructions['General_Inputs']['Font_size']),
+                                        #                    anchor="w")  #This is the label that provides the description to the value
+                                        #lblTitle.bind('<Button>', cmd_lightUp)
+                                        #lblTitle.place(y=(self.dblZoneSensHeight * SensCounter),
+                                        #               x=5,
+                                        #               height=self.dblZoneSensHeight,
+                                        #               width=self.dblZoneSensWidthLBL)
+                                        lblVal = tk.Label(self.frmZoneSensors,
+                                                          text=dictInstructions['ZONE_Inputs']['GUI_Information'][key]['GUI_Default'],
+                                                          font=(dictInstructions['General_Inputs']['Font'],
+                                                                dictInstructions['General_Inputs']['Font_size']),
+                                                          relief="sunken")
+                                        #lblVal.bind('<Button>', cmd_lightUp)
+                                        lblVal.place(y=(self.dblZoneSensHeight * (i-6)),
+                                                     x=(self.dblZoneSensWidthLBL + self.dblZoneSensWidthVal/2),
+                                                     height=self.dblZoneSensHeight,
+                                                     width=self.dblZoneSensWidthVal/2)
+                                        dictInstructions['ZONE_Inputs']['GUI_Information'][key]['GUI_Val'] = lblVal  # Local level insturctions
+                                        dictGlobalInstructions['ZONE_Inputs']['GUI_Information'][key]['GUI_Val'] = lblVal  # Module level instructions
 
         #Insert PV Graph and gauge
-        self.Zone_Graph = cht_plt.GUI_graph(dictInstructions['ZONE_Inputs']['Graph_params'], self.frmZoneGraph)
+        self.Zone_Graph = cht_plt.GUI_graph(dictInstructions['ZONE_Inputs']['Graph1_params'], self.frmZoneGraph)
         #self.Zone_Gauge = cht_plt.GUI_gauge(dictInstructions['ZONE_Inputs']['Gauge_params'], self.frmZoneGauge)
 
     def update_GUI_vals_thread(self, dictUpdates):
