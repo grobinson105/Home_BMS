@@ -108,7 +108,10 @@ class BMS_Sensors:
         while self.continue_to_operate == True:
             #print("Sensor: waiting for requests")
             self.sensor_server_live = True
-            message = socket.recv()
+            message_full = socket.recv()
+            message_decode = message_full.decode("utf-8")
+            message = json.loads(message_decode)
+            #print("Message received: " + str(message))
             current_time = time.time()
 
             if self.last_request_time is not None:
@@ -121,16 +124,16 @@ class BMS_Sensors:
             #print("Received message: " + str(message))
 
             lstReturn = [elapsed_time]
-            lstReturn.append(self.collate_sensors())
+            lstReturn.append(self.collate_sensors(message[1]))
             serialised_data = json.dumps(lstReturn).encode("utf-8")
             #print("Sensors: sending response...")
             socket.send(serialised_data)
             #print("Sensors: response sent.")
 
-            if message == True:
+            if message[0] == True:
                 self.continue_to_operate = False
 
-    def collate_Zone_sensors(self):
+    def collate_Zone_sensors(self, boolSwitchBot):
         # Zone1 sensor
         if len(self.lstZone1Reading) != 0:
             avZone1 = sum(self.lstZone1Reading) / len(self.lstZone1Reading)
@@ -160,11 +163,18 @@ class BMS_Sensors:
         self.lstZone4Reading = []
 
         #Temperature
-        Z1_Temp = self.switch_bot(self.dictInstructions['ZONE_Inputs']['GUI_Information']['Zone1_Temp']['Device_Name'])
-        Z2_Temp = self.switch_bot(self.dictInstructions['ZONE_Inputs']['GUI_Information']['Zone2_Temp']['Device_Name'])
-        Z3_Temp = self.switch_bot(self.dictInstructions['ZONE_Inputs']['GUI_Information']['Zone3_Temp']['Device_Name'])
-        Z4_Temp = self.switch_bot(self.dictInstructions['ZONE_Inputs']['GUI_Information']['Zone4_Temp']['Device_Name'])
-        Outdoor_Temp = self.switch_bot(self.dictInstructions['ZONE_Inputs']['GUI_Information']['Outdoor_Temp']['Device_Name'])
+        if boolSwitchBot == True:
+                Z1_Temp = self.switch_bot(self.dictInstructions['ZONE_Inputs']['GUI_Information']['Zone1_Temp']['Device_Name'])
+                Z2_Temp = self.switch_bot(self.dictInstructions['ZONE_Inputs']['GUI_Information']['Zone2_Temp']['Device_Name'])
+                Z3_Temp = self.switch_bot(self.dictInstructions['ZONE_Inputs']['GUI_Information']['Zone3_Temp']['Device_Name'])
+                Z4_Temp = self.switch_bot(self.dictInstructions['ZONE_Inputs']['GUI_Information']['Zone4_Temp']['Device_Name'])
+                Outdoor_Temp = self.switch_bot(self.dictInstructions['ZONE_Inputs']['GUI_Information']['Outdoor_Temp']['Device_Name'])
+        else:
+                Z1_Temp = 'n/a'
+                Z2_Temp = 'n/a'
+                Z3_Temp = 'n/a'
+                Z4_Temp = 'n/a'
+                Outdoor_Temp = 'n/a'
         
         self.dictZoneData = [[self.Zone1_SQL, avZone1],
                                 [self.Zone2_SQL, avZone2],
@@ -307,7 +317,7 @@ class BMS_Sensors:
 
         self.solar_sensors_collated = True
 
-    def collate_sensors(self):
+    def collate_sensors(self, boolSwitchBot):
         self.solar_sensors_collated = False
         self.HP_sensors_collated = False
         self.PV_sensors_collated = False
@@ -318,7 +328,7 @@ class BMS_Sensors:
         threading.Thread(target=self.collate_HP_sensors, daemon=True).start()
         threading.Thread(target=self.collate_PV_sensors, daemon=True).start()
         threading.Thread(target=self.collate_BAT_sensors, daemon=True).start()
-        threading.Thread(target=self.collate_Zone_sensors, daemon=True).start()
+        threading.Thread(target=self.collate_Zone_sensors, args=(boolSwitchBot,), daemon=True).start()
 
         while not all([self.solar_sensors_collated, self.HP_sensors_collated, self.PV_sensors_collated,
                       self.BAT_sensors_collated, self.Zone_sensors_collated]):
