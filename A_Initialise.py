@@ -23,8 +23,8 @@ dbLoc = "/media/HeatSet_BMS/" # "/mnt/usb/BMS2" #'C:\\Users\\grobi\\OneDrive\\Do
 fileLoc = "/home/pi/Home_BMS/" #"/home/room1/Home_BMS/" #'C:\\Users\\grobi\\OneDrive\\Documents\\George\\Home Energy Monitoring v2\\v2\\Home_BMS\\'
 
 #Switch-Bot tokens (DO NOT STORE ON GITHUB)
-TOKEN = '' #To get these values navigate to the version in the preferences section of hte app and press on it approximately 10 times
-SECRET = ''
+TOKEN = '32a533b7602fdc329ba978ad2acd0fcad287b15e95a00097a38dff42ab52c7918045ea791ef5616338612abe33cd8aa0' #To get these values navigate to the version in the preferences section of hte app and press on it approximately 10 times
+SECRET = '0ed28045467b1ab00d3bd217fcd52ae3'
 
 #I2C
 I2C_ADC_Address = 0x08      #No longer used

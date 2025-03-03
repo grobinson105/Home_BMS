@@ -473,8 +473,10 @@ class BMS_Sensors:
                             print(f"Failed to retrieve temperature: {status_response.status_code} - {status_response.text}")
                     else:
                         print(f"Device '{DEVICE_NAME}' not found.")
+                        temperature = -997
                 else:
                     print("Error: 'deviceList' not found in API response.")
+                    temperature = -998
             except Exception as e:
                 print(f"Error processing API response: {e}")
                 temperature = -999
